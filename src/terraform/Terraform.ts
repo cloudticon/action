@@ -70,7 +70,7 @@ export class Terraform extends TerraformGenerator {
   }
 
   public getMetadataPath() {
-    return `${this.dir}/.terraform`;
+    return [`${this.dir}/.terraform`, `${this.dir}/.terraform.lock.hcl`];
   }
 
   public getVarAsArgument(name: string) {

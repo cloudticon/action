@@ -11,6 +11,7 @@ import { terraformProjectBranchScope } from "./terraform/terraformProjectBranchS
 import { terraformRepositoryBranchScope } from "./terraform/terraformRepositoryBranchScope";
 import * as cache from "@actions/cache";
 import { setupBuildx } from "./utils/setupBuildx";
+import { exec } from "@actions/exec";
 
 export * from "./components";
 export * from "./legacy/getValues";
@@ -38,13 +39,15 @@ export const run = async () => {
   repositoryBranchScope.setVariables(values);
 
   await cache.restoreCache(["/tmp/docker-cache"], dockerCacheKey);
+
   await cache.restoreCache(
     [
-      projectBranchScope.getMetadataPath(),
-      repositoryBranchScope.getMetadataPath(),
+      ...projectBranchScope.getMetadataPath(),
+      ...repositoryBranchScope.getMetadataPath(),
     ],
     terraformCacheKey
   );
+  await exec(`ls -la ${`${context.workingDir}/.ct/project-branch`}`);
 
   const { services, outputs } = compileAndRequire(
     `${context.workingDir}/ct`,
@@ -67,8 +70,8 @@ export const run = async () => {
 
   await cache.saveCache(
     [
-      projectBranchScope.getMetadataPath(),
-      repositoryBranchScope.getMetadataPath(),
+      ...projectBranchScope.getMetadataPath(),
+      ...repositoryBranchScope.getMetadataPath(),
     ],
     terraformCacheKey
   );
