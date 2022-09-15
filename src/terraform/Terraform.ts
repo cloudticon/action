@@ -1,5 +1,6 @@
 import { map, TerraformGenerator, Variable } from "terraform-generator";
 import * as exec from "@actions/exec";
+import * as core from "@actions/core";
 import { getNamespace } from "../utils/getNamespace";
 import { Input } from "../types";
 import { Service } from "../Service";
@@ -9,11 +10,16 @@ export type TerraformCmd = "apply" | "destroy" | "plan";
 export class Terraform extends TerraformGenerator {
   public variables: Map<string, Variable> = new Map();
 
-  constructor(public dir: string, args?: Record<string, any>) {
+  constructor(
+    public name: string,
+    public dir: string,
+    args?: Record<string, any>
+  ) {
     super(args);
+    console.log("Terraform", dir);
     this.backend("s3", {
       bucket: "cloudticon",
-      key: `waw/${dir}`,
+      key: `waw/${name}`,
       region: "eu-central-1",
     });
   }
@@ -35,18 +41,21 @@ export class Terraform extends TerraformGenerator {
   }
 
   public async apply() {
+    core.info(`Apply terraform ${this.name}`);
     this.write();
     await this.init();
     await this.exec(["apply", "-auto-approve"]);
   }
 
   public async plan() {
+    core.info(`Plan terraform ${this.name}`);
     this.write();
     await this.init();
     await this.exec(["plan"]);
   }
 
   public async destroy() {
+    core.info(`Destroy terraform ${this.name}`);
     this.write();
     await this.init();
     await this.exec(["destroy", "-auto-approve"]);

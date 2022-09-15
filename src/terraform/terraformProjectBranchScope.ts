@@ -8,7 +8,7 @@ export const terraformProjectBranchScope = () => {
   const dir = `${context.workingDir}/.ct/project-branch`;
   const dockerCreds = getDockerCreds();
 
-  const tf = new Terraform(dir, {
+  const tf = new Terraform(`${context.project}-${context.branch}`, dir, {
     required_version: ">= 0.12",
     required_providers: {
       kubernetes: map({

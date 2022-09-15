@@ -3,7 +3,7 @@ import * as core from "@actions/core";
 import * as fs from "fs";
 
 export const setupHasuraCli = async () => {
-  core.debug("Download hasura cli");
+  core.info("Download hasura cli");
   const url =
     "https://github.com/hasura/graphql-engine/releases/download/v2.11.2/cli-hasura-linux-amd64";
   const binaryPath = await tc.downloadTool(url, "/tmp/hasura-cli/hasura");
