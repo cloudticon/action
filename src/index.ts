@@ -10,6 +10,7 @@ import { TerraformCmd } from "./terraform/Terraform";
 import { terraformProjectBranchScope } from "./terraform/terraformProjectBranchScope";
 import { terraformRepositoryBranchScope } from "./terraform/terraformRepositoryBranchScope";
 import * as cache from "@actions/cache";
+import * as io from "@actions/io";
 import { setupBuildx } from "./utils/setupBuildx";
 
 export * from "./components";
@@ -37,7 +38,7 @@ export const run = async () => {
   const repositoryBranchScope = await terraformRepositoryBranchScope();
   repositoryBranchScope.setVariables(values);
 
-  await cache.restoreCache(["/opt/docker-cache/old"], dockerCacheKey);
+  await cache.restoreCache(["/tmp/docker-cache"], dockerCacheKey);
   await cache.restoreCache(
     [
       projectBranchScope.getMetadataPath(),
@@ -72,7 +73,10 @@ export const run = async () => {
     ],
     terraformCacheKey
   );
-  await cache.saveCache(["/opt/docker-cache/new"], dockerCacheKey);
+
+  await io.rmRF("/tmp/docker-cache");
+  await io.mv("/tmp/docker-cache-new", "/tmp/docker-cache");
+  await cache.saveCache(["/tmp/docker-cache"], dockerCacheKey);
 };
 
 run().then();
