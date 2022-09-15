@@ -14,8 +14,8 @@ export type DockerImageParams = {
 };
 
 export class DockerImage {
-  public imageResource: Resource;
   public buildResource: Resource;
+  public image: Input<string>;
 
   constructor({
     name,
@@ -24,6 +24,7 @@ export class DockerImage {
     dockerfile = "Dockerfile",
     build = false,
   }: DockerImageParams) {
+    this.image = image;
     this.buildResource = globalTerraform.resource(
       "null_resource",
       `${name}-build`,
@@ -43,14 +44,6 @@ export class DockerImage {
         }),
       ]);
     }
-    this.imageResource = globalTerraform.resource("docker_image", name, {
-      name: image,
-      depends_on: [`null_resource.${name}-build`],
-    });
-  }
-
-  get name() {
-    return this.imageResource.attr("name");
   }
 
   addBuildDependsOn(id: Attribute) {

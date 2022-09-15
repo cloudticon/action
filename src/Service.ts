@@ -175,7 +175,7 @@ export class Service {
             ],
             container: {
               name: this.name,
-              image: this.dockerImage.name,
+              image: this.dockerImage.image,
               env: Object.entries(this.envs).map(([name, value]) => ({
                 name,
                 value,
@@ -190,6 +190,7 @@ export class Service {
           },
         },
       },
+      depends_on: [this.dockerImage.buildResource],
     };
     if (this.volumes.length) {
       deployArgs.spec.service_name = this.name;

@@ -10,7 +10,6 @@ import { TerraformCmd } from "./terraform/Terraform";
 import { terraformProjectBranchScope } from "./terraform/terraformProjectBranchScope";
 import { terraformRepositoryBranchScope } from "./terraform/terraformRepositoryBranchScope";
 import * as cache from "@actions/cache";
-import * as io from "@actions/io";
 import { setupBuildx } from "./utils/setupBuildx";
 
 export * from "./components";
@@ -74,8 +73,6 @@ export const run = async () => {
     terraformCacheKey
   );
 
-  await io.rmRF("/tmp/docker-cache");
-  await io.mv("/tmp/docker-cache-new", "/tmp/docker-cache");
   await cache.saveCache(["/tmp/docker-cache"], dockerCacheKey);
 };
 
