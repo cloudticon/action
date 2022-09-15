@@ -45,9 +45,7 @@ tfg.provider("docker", {});
 
 tfg.provider("null", {});
 
-tfg.provider("kubernetes", {
-  config_path: "~/.kube/ct-waw",
-});
+tfg.provider("kubernetes", {});
 
 export const namespace = tfg.resource("kubernetes_namespace_v1", "default", {
   metadata: {
