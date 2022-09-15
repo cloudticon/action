@@ -1,10 +1,25 @@
 import { TerraformGenerator, map, heredoc, Backend } from "terraform-generator";
 import { Service } from "./Service";
 import { context } from "./context";
+import { Input } from "./types";
 
 const services: Service[] = [];
 export const registerService = (service: Service) => {
   services.push(service);
+};
+
+export const generateOutputs = (outputs: Record<string, Input<string>>) => {
+  Object.entries(outputs).forEach(([name, value]) =>
+    tfg.output(name, {
+      value: value,
+    })
+  );
+  tfg.resource("kubernetes_config_map_v1", "outputs", {
+    metadata: {
+      namespace: getNamespace(),
+    },
+    data: map(outputs),
+  });
 };
 
 export const generateServices = () => {
