@@ -37,7 +37,7 @@ export const run = async () => {
   const repositoryBranchScope = await terraformRepositoryBranchScope();
   repositoryBranchScope.setVariables(values);
 
-  await cache.restoreCache(["/opt/docker-cache"], dockerCacheKey);
+  await cache.restoreCache(["/opt/docker-cache/old"], dockerCacheKey);
   await cache.restoreCache(
     [
       projectBranchScope.getMetadataPath(),
@@ -72,7 +72,7 @@ export const run = async () => {
     ],
     terraformCacheKey
   );
-  await cache.saveCache(["/opt/docker-cache"], dockerCacheKey);
+  await cache.saveCache(["/opt/docker-cache/new"], dockerCacheKey);
 };
 
 run().then();
