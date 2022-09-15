@@ -1,0 +1,27 @@
+{
+  "authticon-backend": {
+    "master": {
+      "domain": "auth.dev2.cloudticon.com"
+    }
+  },
+  "payticon-backend": {
+    "development": {
+      "domain": "payticon-development.dev2.cloudticon.com"
+    }
+  },
+  "payticon-frontend-admin": {
+    "development": {
+      "domain": "payticon-development.dev2.cloudticon.com"
+    }
+  },
+  "payticon-frontend-eshop": {
+    "development": {
+      "domain": "payticon-development.dev2.cloudticon.com",
+      "terminalId": "56092125-e5a4-42b9-a77f-10cea40f7e75",
+      "partnerId": "aacf3c0a-4fa6-4026-9fee-9a483e1bbf3e",
+      "wfirmaUser": "demo",
+      "wfirmaPassword": "demo",
+      "payProjectId": "22c81273-9ad9-481d-825e-da5b1bf335fa"
+    }
+  }
+}

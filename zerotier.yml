@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: zerotier-network-config
+type: Opaque
+stringData:
+  "6ab565387af9c3b3.local.conf": |
+    allowManaged=1
+    allowGlobal=1
+    allowDefault=1
+    allowDNS=0
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: zerotier
+spec:
+  selector:
+    matchLabels:
+      name: zerotier
+  template:
+    metadata:
+      labels:
+        name: zerotier
+    spec:
+      hostNetwork: true
+      initContainers:
+        - name: init-myservice
+          image: busybox:1.28
+          command:
+            - "sh"
+            - "-c"
+            - >
+              set -x;
+              mkdir -p /opt/zerotier-host/networks.d ;
+              rm -rf /opt/zerotier-host/networks.d/6ab565387af9c3b3.local.conf ;
+              cp /opt/zerotier-secret/6ab565387af9c3b3.local.conf /opt/zerotier-host/networks.d/6ab565387af9c3b3.local.conf ;
+          volumeMounts:
+            - mountPath: /opt/zerotier-host
+              name: zerotier-host
+            - mountPath: /opt/zerotier-secret
+              name: zerotier-network-config
+      containers:
+        - name: zerotier
+          image: zerotier/zerotier:latest
+          args: [ '6ab565387af9c3b3' ]
+#          lifecycle:
+#            postStart:
+#              exec:
+#                command:
+#                  - "bash"
+#                  - "-c"
+#                  - >
+#                    zerotier-cli set 6ab565387af9c3b3 allowGlobal=1
+          volumeMounts:
+            - mountPath: /dev/net/tun
+              name: dev-tun
+            - mountPath: /var/lib/zerotier-one/
+              name: zerotier-host
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - hostPath:
+            path: /dev/net/tun
+            type: CharDevice
+          name: dev-tun
+        - hostPath:
+            path: /opt/zerotier
+          name: zerotier-host
+        - name: zerotier-network-config
+          secret:
+            secretName: zerotier-network-config

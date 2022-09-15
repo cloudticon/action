@@ -1,0 +1,22 @@
+{
+  "name": "deploy",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@actions/core": "^1.9.1",
+    "@actions/github": "^5.0.3",
+    "@types/node": "^18.7.18",
+    "@vercel/ncc": "^0.34.0",
+    "prettier": "^2.7.1",
+    "terraform-generator": "^5.2.0",
+    "ts-node": "^10.9.1",
+    "tsconfig-paths": "^4.1.0",
+    "typescript": "^4.8.3"
+  },
+  "scripts": {
+    "test": "WK=/home/krs/Projects/payticon/frontend-eshop ts-node src/index.ts && cd /home/krs/Projects/payticon/frontend-eshop  && terraform init && terraform apply -auto-approve",
+    "package": "ncc build --source-map --license licenses.txt",
+    "build": "tsc"
+  }
+}
