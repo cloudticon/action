@@ -1,6 +1,6 @@
-import { tfg } from "../tfg";
 import { context } from "../context";
 import { map } from "terraform-generator";
+import { tfg } from "./compileAndRequire";
 
 type GetRepositoryOutputParams = {
   repository: string;

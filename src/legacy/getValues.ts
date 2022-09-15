@@ -1,4 +1,4 @@
-import { variables } from "../values";
+import { variables } from "./compileAndRequire";
 
 export const getValues = () => ({
   get: getValue,
