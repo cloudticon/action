@@ -9,13 +9,14 @@ export * from "./utils/interpolate";
 export * from "./utils/getRepositoryOutput";
 
 import * as core from "@actions/core";
-import { compileCt } from "./utils/compileCt";
-import * as fs from "fs";
+require("module-alias/register");
+require("ts-node").register({
+  lazy: true,
+});
 
 async function run(): Promise<void> {
   try {
-    await compileCt();
-    require(`${context.workingDir}/ct`);
+    require(`${context.workingDir}/ct.ts`);
     core.setOutput("time", new Date().toTimeString());
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message);
