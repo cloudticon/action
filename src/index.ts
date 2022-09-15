@@ -5,6 +5,8 @@ import { addAlias } from "module-alias";
 import { context } from "./context";
 import { generateServices } from "./tfg";
 import { setupTerraform } from "./utils/installTerraform";
+import { runTerraform } from "./utils/runTerraform";
+import { setupCreds } from "./utils/setupCreds";
 
 export * from "./components";
 export * from "./utils/getValues";
@@ -15,6 +17,7 @@ export * from "./utils/getRepositoryOutput";
 addAlias("cloudticon", __dirname + "/index.js");
 
 export const run = async () => {
+  await setupCreds();
   await setupTerraform();
   compileAndRequire(`${context.workingDir}/ct`, {
     noEmitOnError: false,
@@ -23,6 +26,8 @@ export const run = async () => {
     module: ModuleKind.CommonJS,
   });
   generateServices();
+  await runTerraform(["init"]);
+  await runTerraform(["apply", "-auto-approve"]);
 };
 
 run();

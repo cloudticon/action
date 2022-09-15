@@ -26,6 +26,7 @@
   "dependencies": {
     "@actions/tool-cache": "^2.0.1",
     "@hashicorp/js-releases": "^1.6.1",
+    "axios": "^0.27.2",
     "esbuild": "^0.15.7",
     "module-alias": "^2.2.2",
     "typescript-require": "^0.3.0"
