@@ -7,5 +7,5 @@ export const context = {
   project,
   repository,
   branch,
-  workingDir: process.env.DEPLOYMENT_BASEPATH,
+  workingDir: process.env.GITHUB_WORKSPACE,
 };
