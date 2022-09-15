@@ -7,7 +7,8 @@ docker buildx build $CTX \
     -t $IMAGE \
     --cache-from type=local,src=.docker \
     --cache-to type=local,dest=.docker-new \
-    --push
+    --load
 
+docker push $IMAGE
 rm -rf .docker
 mv .docker-new .docker
