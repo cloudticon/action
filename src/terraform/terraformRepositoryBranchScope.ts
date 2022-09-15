@@ -3,7 +3,7 @@ import { map } from "terraform-generator";
 import { context } from "../context";
 
 export const terraformRepositoryBranchScope = () => {
-  const dir = context.workingDir;
+  const dir = `/tmp/.ct/repository-branch`;
   const tf = new Terraform(
     `${context.project}-${context.repository}-${context.branch}`,
     dir,

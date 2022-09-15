@@ -1,7 +1,6 @@
-import { compileAndRequire } from "./utils/compileAndRequire";
+import { compileAndRequireCtFile } from "./utils/compileAndRequireCtFile";
 
 import { addAlias } from "module-alias";
-import { context } from "./context";
 import { setupTerraform } from "./utils/installTerraform";
 import { setupCreds } from "./utils/setupCreds";
 import { setupHasuraCli } from "./utils/setupHasuraCli";
@@ -9,9 +8,8 @@ import * as core from "@actions/core";
 import { TerraformCmd } from "./terraform/Terraform";
 import { terraformProjectBranchScope } from "./terraform/terraformProjectBranchScope";
 import { terraformRepositoryBranchScope } from "./terraform/terraformRepositoryBranchScope";
-import * as cache from "@actions/cache";
 import { setupBuildx } from "./utils/setupBuildx";
-import { exec } from "@actions/exec";
+import { restoreCache, saveCache } from "./cache";
 
 export * from "./components";
 export * from "./legacy/getValues";
@@ -23,8 +21,7 @@ addAlias("cloudticon", __dirname + "/index.js");
 
 export const run = async () => {
   const cmd = core.getInput("cmd") as TerraformCmd;
-  const terraformCacheKey = `${context.project}-${context.repository}-${context.branch}`;
-  const dockerCacheKey = `${context.project}-${context.repository}-${context.branch}-docker`;
+
   const values = {
     domain: `payticon.dev2.cloudticon.com`,
   };
@@ -38,19 +35,9 @@ export const run = async () => {
   const repositoryBranchScope = await terraformRepositoryBranchScope();
   repositoryBranchScope.setVariables(values);
 
-  await cache.restoreCache(["/tmp/docker-cache"], dockerCacheKey);
+  await restoreCache([projectBranchScope, repositoryBranchScope]);
 
-  await cache.restoreCache(
-    [
-      ...projectBranchScope.getMetadataPath(),
-      ...repositoryBranchScope.getMetadataPath(),
-    ],
-    terraformCacheKey
-  );
-  await exec(`ls -la ${`${context.workingDir}/.ct/project-branch`}`);
-
-  const { services, outputs } = compileAndRequire(
-    `${context.workingDir}/ct`,
+  const { services, outputs } = await compileAndRequireCtFile(
     repositoryBranchScope
   );
   repositoryBranchScope.setOutput(outputs);
@@ -68,15 +55,7 @@ export const run = async () => {
       break;
   }
 
-  await cache.saveCache(
-    [
-      ...projectBranchScope.getMetadataPath(),
-      ...repositoryBranchScope.getMetadataPath(),
-    ],
-    terraformCacheKey
-  );
-
-  await cache.saveCache(["/tmp/docker-cache"], dockerCacheKey);
+  await saveCache([projectBranchScope, repositoryBranchScope]);
 };
 
 run().then();

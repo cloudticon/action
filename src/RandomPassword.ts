@@ -1,6 +1,6 @@
 import { Resource } from "terraform-generator/dist/blocks";
 import { fn } from "terraform-generator";
-import { globalTerraform } from "./utils/compileAndRequire";
+import { globalTerraform } from "./utils/compileAndRequireCtFile";
 
 export type RandomPasswordInput = {
   name: string;

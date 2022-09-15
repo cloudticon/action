@@ -4,6 +4,7 @@ import * as core from "@actions/core";
 import { getNamespace } from "../utils/getNamespace";
 import { Input } from "../types";
 import { Service } from "../Service";
+import * as fs from "fs";
 
 export type TerraformCmd = "apply" | "destroy" | "plan";
 
@@ -67,6 +68,7 @@ export class Terraform extends TerraformGenerator {
 
   public write() {
     super.write({ dir: this.dir, format: true });
+    core.debug(fs.readFileSync(`${this.dir}/terraform.tf`, "utf8"));
   }
 
   public getMetadataPath() {

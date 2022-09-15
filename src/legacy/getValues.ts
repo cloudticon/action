@@ -1,4 +1,4 @@
-import { globalTerraform } from "../utils/compileAndRequire";
+import { globalTerraform } from "../utils/compileAndRequireCtFile";
 
 export const getValues = () => ({
   get: getValue,

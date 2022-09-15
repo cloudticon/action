@@ -4,6 +4,7 @@ import { Terraform } from "../terraform/Terraform";
 import { Service } from "../Service";
 import { DockerImage } from "../DockerImage";
 import * as io from "@actions/io";
+import { context } from "../context";
 
 export let globalTerraform: Terraform;
 export let services: Service[];
@@ -20,13 +21,13 @@ type CompileAndRequireOutput = {
   outputs: Record<string, Input<string>>;
   services: Service[];
 };
-export const compileAndRequire = async (
-  fileName: string,
+export const compileAndRequireCtFile = async (
   tf: Terraform
 ): Promise<CompileAndRequireOutput> => {
   globalTerraform = tf;
   services = [];
   dockerImages = [];
+  const fileName = `${context.workingDir}/ct`;
 
   createProgram([`${fileName}.ts`], {
     noEmitOnError: false,

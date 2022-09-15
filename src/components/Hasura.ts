@@ -6,6 +6,7 @@ import { RandomPassword } from "../RandomPassword";
 import { TerraformGenerator } from "terraform-generator";
 import { LocalExec } from "../LocalExec";
 import * as path from "path";
+import { context } from "../context";
 
 export type HasuraInput = ServiceInput & {
   name: string;
@@ -113,7 +114,7 @@ export class Hasura extends Service {
     new LocalExec({
       name: `${this.name}-deploy`,
       command: scriptPath,
-      workingDir: "hasura",
+      workingDir: `${context.workingDir}/hasura`,
       environment: {
         HASURA_GRAPHQL_ENDPOINT: this.publicUrl,
         HASURA_GRAPHQL_ADMIN_SECRET: this.adminSecret,

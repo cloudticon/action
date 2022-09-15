@@ -1,6 +1,6 @@
 import { context } from "../context";
 import { map } from "terraform-generator";
-import { globalTerraform } from "../utils/compileAndRequire";
+import { globalTerraform } from "../utils/compileAndRequireCtFile";
 
 type GetRepositoryOutputParams = {
   repository: string;

@@ -7,7 +7,7 @@ import { getNamespace } from "./utils/getNamespace";
 import {
   registerGlobalService,
   globalTerraform,
-} from "./utils/compileAndRequire";
+} from "./utils/compileAndRequireCtFile";
 
 export type ServiceBuildInput = {
   context: string;

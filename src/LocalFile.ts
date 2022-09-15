@@ -1,6 +1,6 @@
 import { Input } from "./types";
 import { Resource } from "terraform-generator/dist/blocks";
-import { globalTerraform } from "./utils/compileAndRequire";
+import { globalTerraform } from "./utils/compileAndRequireCtFile";
 
 export type LocalFileInput = {
   name: string;
