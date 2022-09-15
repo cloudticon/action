@@ -1,6 +1,5 @@
 import { Service, ServiceInput } from "../Service";
 import { Input } from "../types";
-import { LocalExec } from "../LocalExec";
 import { Postgres } from "./Postgres";
 import { BackendFunctions } from "./BackendFunctions";
 import { RandomPassword } from "../RandomPassword";
@@ -108,23 +107,24 @@ export class Hasura extends Service {
   }
 
   toTf(): TerraformGenerator {
-    new LocalExec({
-      name: `${this.name}-deploy`,
-      command: "hasura --skip-update-check deploy --insecure-skip-tls-verify",
-      workingDir: "hasura",
-      environment: {
-        HASURA_GRAPHQL_ENDPOINT: this.publicUrl,
-        HASURA_GRAPHQL_ADMIN_SECRET: this.adminSecret,
-      },
-      dependsOn: [
-        this.kubeDeployment,
-        this.kubeIngress,
-        this.functions?.kubeService,
-        this.functions?.kubeService,
-        this.postgres?.kubeService,
-        this.postgres?.kubeDeployment,
-      ].filter((d) => !!d),
-    });
+    // const scriptPath = path.resolve("scripts/hasura-deploy.sh");
+    // new LocalExec({
+    //   name: `${this.name}-deploy`,
+    //   command: scriptPath,
+    //   workingDir: "hasura",
+    //   environment: {
+    //     HASURA_GRAPHQL_ENDPOINT: this.publicUrl,
+    //     HASURA_GRAPHQL_ADMIN_SECRET: this.adminSecret,
+    //   },
+    //   dependsOn: [
+    //     this.kubeDeployment,
+    //     this.kubeIngress,
+    //     this.functions?.kubeService,
+    //     this.functions?.kubeService,
+    //     this.postgres?.kubeService,
+    //     this.postgres?.kubeDeployment,
+    //   ].filter((d) => !!d),
+    // });
     return super.toTf();
   }
 }

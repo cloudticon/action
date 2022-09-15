@@ -24,5 +24,5 @@ export const setupCreds = async () => {
   core.exportVariable("AWS_SECRET_ACCESS_KEY", response.data.awsSecretKey);
 
   const { url, user, password } = response.data.docker;
-  await exec(`docker ${url} --username ${user} --password ${password}`);
+  await exec(`docker login ${url} --username ${user} --password ${password}`);
 };

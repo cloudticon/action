@@ -7,6 +7,7 @@ import { generateServices } from "./tfg";
 import { setupTerraform } from "./utils/installTerraform";
 import { runTerraform } from "./utils/runTerraform";
 import { setupCreds } from "./utils/setupCreds";
+import { setupHasuraCli } from "./utils/setupHasuraCli";
 
 export * from "./components";
 export * from "./utils/getValues";
@@ -17,6 +18,7 @@ export * from "./utils/getRepositoryOutput";
 addAlias("cloudticon", __dirname + "/index.js");
 
 export const run = async () => {
+  await setupHasuraCli();
   await setupCreds();
   await setupTerraform();
   compileAndRequire(`${context.workingDir}/ct`, {
