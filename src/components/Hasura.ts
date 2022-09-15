@@ -108,7 +108,7 @@ export class Hasura extends Service {
     return this;
   }
 
-  toTf(): TerraformGenerator {
+  toTf() {
     const scriptPath = path.resolve("scripts/hasura-deploy.sh");
     new LocalExec({
       name: `${this.name}-deploy`,

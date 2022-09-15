@@ -6,6 +6,10 @@ inputs:
     required: true
     description: 'input description here'
     default: 'default value if applicable'
+  cmd:
+    required: false
+    description: 'input description here'
+    default: 'apply'
 runs:
   using: 'node16'
   main: 'dist/index.js'

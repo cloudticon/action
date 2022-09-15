@@ -1,9 +1,13 @@
-import { getNamespace, registerService, tfg } from "./tfg";
 import { map } from "terraform-generator";
 import { context } from "./context";
 import { DockerImage } from "./DockerImage";
 import { Input } from "./types";
 import { Resource } from "terraform-generator/dist/blocks";
+import { getNamespace } from "./utils/getNamespace";
+import {
+  registerGlobalService,
+  globalTerraform,
+} from "./utils/compileAndRequire";
 
 export type ServiceBuildInput = {
   context: string;
@@ -99,7 +103,7 @@ export class Service {
     this.kubeService = new Resource("kubernetes_service", this.name);
     this.kubeDeployment = new Resource(this.deployType, this.name);
     this.kubeIngress = new Resource("kubernetes_ingress_v1", this.name);
-    registerService(this);
+    registerGlobalService(this);
   }
 
   env(name: string, value: Input<string>) {
@@ -117,25 +121,29 @@ export class Service {
   }
 
   toTf() {
-    this.kubeService = tfg.resource("kubernetes_service", this.name, {
-      metadata: {
-        name: this.name,
-        namespace: getNamespace(),
-        labels: map({
-          ct_service: this.name,
-        }),
-      },
-      spec: {
-        selector: map({
-          ct_service: this.name,
-        }),
-        port: {
-          port: this.port,
-          target_port: this.port,
+    this.kubeService = globalTerraform.resource(
+      "kubernetes_service",
+      this.name,
+      {
+        metadata: {
+          name: this.name,
+          namespace: getNamespace(),
+          labels: map({
+            ct_service: this.name,
+          }),
         },
-        type: "ClusterIP",
-      },
-    });
+        spec: {
+          selector: map({
+            ct_service: this.name,
+          }),
+          port: {
+            port: this.port,
+            target_port: this.port,
+          },
+          type: "ClusterIP",
+        },
+      }
+    );
 
     const deployArgs: any = {
       metadata: {
@@ -206,48 +214,54 @@ export class Service {
         },
       }));
     }
-    this.kubeDeployment = tfg.resource(this.deployType, this.name, deployArgs);
+    this.kubeDeployment = globalTerraform.resource(
+      this.deployType,
+      this.name,
+      deployArgs
+    );
 
-    this.kubeIngress = tfg.resource("kubernetes_ingress_v1", this.name, {
-      metadata: {
-        name: this.name,
-        namespace: getNamespace(),
-        annotations: map({
-          // '"cert-manager.io/cluster-issuer"': "letsencrypt-prod",
-          // '"acme.cert-manager.io/http01-edit-in-place"': "true",
-          // '"kubernetes.io/ingress.class"': "haproxy",
-          // '"haproxy-ingress.github.io/balance-algorithm"': "roundrobin",
-          // '"haproxy-ingress.github.io/blue-green-deploy"':
-          //   "group=blue=1,group=green=1",
-          // '"haproxy-ingress.github.io/blue-green-mode"': "pod",
-          // '"haproxy-ingress.github.io/ssl-redirect"': "false",
-        }),
-      },
-      spec: {
-        ingress_class_name: "haproxy",
-        tls: {
-          hosts: [this.host],
+    this.kubeIngress = globalTerraform.resource(
+      "kubernetes_ingress_v1",
+      this.name,
+      {
+        metadata: {
+          name: this.name,
+          namespace: getNamespace(),
+          annotations: map({
+            // '"cert-manager.io/cluster-issuer"': "letsencrypt-prod",
+            // '"acme.cert-manager.io/http01-edit-in-place"': "true",
+            // '"kubernetes.io/ingress.class"': "haproxy",
+            // '"haproxy-ingress.github.io/balance-algorithm"': "roundrobin",
+            // '"haproxy-ingress.github.io/blue-green-deploy"':
+            //   "group=blue=1,group=green=1",
+            // '"haproxy-ingress.github.io/blue-green-mode"': "pod",
+            // '"haproxy-ingress.github.io/ssl-redirect"': "false",
+          }),
         },
-        rule: {
-          host: this.host,
-          http: {
-            path: this.publicPrefixes.map((p) => ({
-              path: p,
-              path_type: "Prefix",
-              backend: {
-                service: {
-                  name: this.name,
-                  port: {
-                    number: this.port,
+        spec: {
+          ingress_class_name: "haproxy",
+          tls: {
+            hosts: [this.host],
+          },
+          rule: {
+            host: this.host,
+            http: {
+              path: this.publicPrefixes.map((p) => ({
+                path: p,
+                path_type: "Prefix",
+                backend: {
+                  service: {
+                    name: this.name,
+                    port: {
+                      number: this.port,
+                    },
                   },
                 },
-              },
-            })),
+              })),
+            },
           },
         },
-      },
-    });
-
-    return tfg;
+      }
+    );
   }
 }

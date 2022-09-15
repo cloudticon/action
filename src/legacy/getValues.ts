@@ -1,12 +1,8 @@
-import { variables } from "./compileAndRequire";
+import { globalTerraform } from "../utils/compileAndRequire";
 
 export const getValues = () => ({
   get: getValue,
 });
 
-export const getValue = (name: string) => {
-  if (!variables[name]) {
-    throw new Error(`Value ${name} not found`);
-  }
-  return variables[name].asArgument();
-};
+export const getValue = (name: string) =>
+  globalTerraform.getVarAsArgument(name);

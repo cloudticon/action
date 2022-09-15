@@ -1,7 +1,7 @@
-import { tfg } from "./tfg";
 import { map, Provisioner } from "terraform-generator";
 import { Input } from "./types";
 import { Resource } from "terraform-generator/dist/blocks";
+import { globalTerraform } from "./utils/compileAndRequire";
 
 export type LocalExecInput = {
   name: string;
@@ -12,7 +12,7 @@ export type LocalExecInput = {
 };
 export class LocalExec {
   constructor(input: LocalExecInput) {
-    const exec = tfg.resource("null_resource", input.name, {
+    const exec = globalTerraform.resource("null_resource", input.name, {
       triggers: map({
         time: Date.now(),
       }),

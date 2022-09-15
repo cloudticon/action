@@ -1,6 +1,6 @@
-import { tfg } from "./tfg";
 import { Resource } from "terraform-generator/dist/blocks";
 import { fn } from "terraform-generator";
+import { globalTerraform } from "./utils/compileAndRequire";
 
 export type RandomPasswordInput = {
   name: string;
@@ -15,7 +15,7 @@ export class RandomPassword {
   }
 
   constructor({ name, length = 32, special }: RandomPasswordInput) {
-    this.resource = tfg.resource("random_password", name, {
+    this.resource = globalTerraform.resource("random_password", name, {
       length,
       special,
     });

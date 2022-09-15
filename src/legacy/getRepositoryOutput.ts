@@ -1,6 +1,6 @@
 import { context } from "../context";
 import { map } from "terraform-generator";
-import { tfg } from "./compileAndRequire";
+import { globalTerraform } from "../utils/compileAndRequire";
 
 type GetRepositoryOutputParams = {
   repository: string;
@@ -13,14 +13,18 @@ export const getRepositoryOutput = ({
   project = context.project,
   branch = context.branch,
 }: GetRepositoryOutputParams) => {
-  const data = tfg.data("terraform_remote_state", `${repository}-${branch}`, {
-    backend: "s3",
-    config: map({
-      bucket: "cloudticon",
-      key: `waw/${project}-${repository}/${branch}`,
-      region: "eu-central-1",
-    }),
-  });
+  const data = globalTerraform.data(
+    "terraform_remote_state",
+    `${repository}-${branch}`,
+    {
+      backend: "s3",
+      config: map({
+        bucket: "cloudticon",
+        key: `waw/${project}-${repository}/${branch}`,
+        region: "eu-central-1",
+      }),
+    }
+  );
   return {
     get: (name: string) => data.attr("outputs").attr(name),
   };

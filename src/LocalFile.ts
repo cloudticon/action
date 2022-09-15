@@ -1,6 +1,6 @@
 import { Input } from "./types";
-import { tfg } from "./tfg";
 import { Resource } from "terraform-generator/dist/blocks";
+import { globalTerraform } from "./utils/compileAndRequire";
 
 export type LocalFileInput = {
   name: string;
@@ -20,7 +20,7 @@ export class LocalFile {
   }
 
   constructor(input: LocalFileInput) {
-    this.resource = tfg.resource("local_file", input.name, {
+    this.resource = globalTerraform.resource("local_file", input.name, {
       filename: input.filename,
       content: input.content,
     });

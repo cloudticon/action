@@ -1,8 +1,8 @@
-import { tfg } from "./tfg";
 import { Resource } from "terraform-generator/dist/blocks";
 import { Attribute, map, Provisioner } from "terraform-generator";
 import * as path from "path";
 import { Input } from "./types";
+import { globalTerraform } from "./utils/compileAndRequire";
 
 export type DockerImageParams = {
   name: string;
@@ -24,13 +24,17 @@ export class DockerImage {
     dockerfile = "Dockerfile",
     build = false,
   }: DockerImageParams) {
-    this.buildResource = tfg.resource("null_resource", `${name}-build`, {
-      triggers: build
-        ? map({
-            time: Date.now(),
-          })
-        : undefined,
-    });
+    this.buildResource = globalTerraform.resource(
+      "null_resource",
+      `${name}-build`,
+      {
+        triggers: build
+          ? map({
+              time: Date.now(),
+            })
+          : undefined,
+      }
+    );
     if (build) {
       const scriptPath = path.resolve("scripts/build-and-push-docker-image.sh");
       this.buildResource.setProvisioners([
@@ -39,7 +43,7 @@ export class DockerImage {
         }),
       ]);
     }
-    this.imageResource = tfg.resource("docker_image", name, {
+    this.imageResource = globalTerraform.resource("docker_image", name, {
       name: image,
       depends_on: [`null_resource.${name}-build`],
     });

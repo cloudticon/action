@@ -1,10 +1,10 @@
 import { heredoc, map } from "terraform-generator";
-import { getNamespace } from "./tfg";
-import { getDockerCreds } from "./utils/setupCreds";
-import { context } from "./context";
-import { Terraform, TerraformCmd } from "./Terraform";
+import { getDockerCreds } from "../utils/setupCreds";
+import { context } from "../context";
+import { Terraform } from "./Terraform";
+import { getNamespace } from "../utils/getNamespace";
 
-export const createProjectBranchTf = (cmd: TerraformCmd) => {
+export const terraformProjectBranchScope = () => {
   const dir = `${context.workingDir}/.ct/project-branch`;
   const dockerCreds = getDockerCreds();
 
@@ -18,9 +18,11 @@ export const createProjectBranchTf = (cmd: TerraformCmd) => {
     },
   });
 
+  tf.provider("kubernetes", {});
+
   const namespace = tf.resource("kubernetes_namespace_v1", "default", {
     metadata: {
-      name: `${context.project}-${context.branch}`,
+      name: getNamespace(),
     },
   });
 
@@ -45,5 +47,5 @@ export const createProjectBranchTf = (cmd: TerraformCmd) => {
     type: "kubernetes.io/dockerconfigjson",
   });
 
-  return tf.cmd(cmd);
+  return tf;
 };
