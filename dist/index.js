@@ -1240,6 +1240,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+const context_1 = __nccwpck_require__(3842);
 __exportStar(__nccwpck_require__(4531), exports);
 __exportStar(__nccwpck_require__(7262), exports);
 __exportStar(__nccwpck_require__(849), exports);
@@ -1247,9 +1248,12 @@ __exportStar(__nccwpck_require__(3009), exports);
 __exportStar(__nccwpck_require__(6901), exports);
 const core = __importStar(__nccwpck_require__(2186));
 const compileCt_1 = __nccwpck_require__(7379);
+const fs = __importStar(__nccwpck_require__(7147));
 async function run() {
     try {
+        console.log(fs.readFileSync(context_1.context.workingDir));
         await (0, compileCt_1.compileCt)();
+        console.log(fs.readFileSync(context_1.context.workingDir));
         core.setOutput("time", new Date().toTimeString());
     }
     catch (error) {
@@ -1378,9 +1382,7 @@ exports.compileCt = void 0;
 const exec = __importStar(__nccwpck_require__(1514));
 const context_1 = __nccwpck_require__(3842);
 const compileCt = () => exec
-    .exec(`npm run tsc ct.ts`, [], {
-    cwd: context_1.context.workingDir,
-})
+    .exec(`npm run tsc ${context_1.context.workingDir}/ct.ts`, [])
     .catch((e) => console.log(e));
 exports.compileCt = compileCt;
 //# sourceMappingURL=compileCt.js.map
