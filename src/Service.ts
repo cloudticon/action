@@ -86,7 +86,7 @@ export class Service {
     if (input.build) {
       this.dockerImage = new DockerImage({
         name: this.name,
-        image: `registry.cloudticon.com/deploy-test/${this.name}:${Date.now()}`,
+        image: `registry.cloudticon.com/deploy-test/${this.name}:latest`,
         build: true,
         ...(typeof input.build !== "boolean" ? input.build : {}),
       });
