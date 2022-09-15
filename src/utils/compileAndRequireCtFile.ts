@@ -3,6 +3,7 @@ import { Input } from "../types";
 import { Terraform } from "../terraform/Terraform";
 import { Service } from "../Service";
 import { DockerImage } from "../DockerImage";
+import * as io from "@actions/io";
 
 export let globalTerraform: Terraform;
 export let services: Service[];
@@ -19,10 +20,10 @@ type CompileAndRequireOutput = {
   outputs: Record<string, Input<string>>;
   services: Service[];
 };
-export const compileAndRequire = (
+export const compileAndRequire = async (
   fileName: string,
   tf: Terraform
-): CompileAndRequireOutput => {
+): Promise<CompileAndRequireOutput> => {
   globalTerraform = tf;
   services = [];
   dockerImages = [];
@@ -34,7 +35,8 @@ export const compileAndRequire = (
     module: ModuleKind.CommonJS,
   }).emit();
 
-  const outputs = require(`${fileName}.js`);
+  await io.mv(`${fileName}.js`, "/tmp/ct.js");
+  const outputs = require("/tmp/ct.js");
 
   return {
     outputs,
