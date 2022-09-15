@@ -1195,6 +1195,7 @@ __exportStar(__nccwpck_require__(9058), exports);
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.context = void 0;
+console.log(process.env);
 exports.context = {
     project: "",
     repository: "",
