@@ -14,9 +14,8 @@ import * as fs from "fs";
 
 async function run(): Promise<void> {
   try {
-    console.log(fs.readFileSync(context.workingDir));
     await compileCt();
-    console.log(fs.readFileSync(context.workingDir));
+    require(`${context.workingDir}/ct`);
     core.setOutput("time", new Date().toTimeString());
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message);
