@@ -1,5 +1,3 @@
-console.log(process.env);
-
 const [project, repository] = process.env.GITHUB_REPOSITORY.split("/");
 const [, , branch] = process.env.GITHUB_REF.split("/");
 

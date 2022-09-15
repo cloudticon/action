@@ -1,7 +1,12 @@
 import { variables } from "../values";
 
 export const getValues = () => ({
-  get: (name: string) => variables[name].asArgument(),
+  get: getValue,
 });
 
-export const getValue = (name: string) => variables[name].asArgument();
+export const getValue = (name: string) => {
+  if (!variables[name]) {
+    throw new Error(`Value ${name} not found`);
+  }
+  return variables[name].asArgument();
+};

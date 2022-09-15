@@ -20,10 +20,14 @@
   },
   "scripts": {
     "test": "WK=/home/krs/Projects/payticon/frontend-eshop ts-node src/index.ts && cd /home/krs/Projects/payticon/frontend-eshop  && terraform init && terraform apply -auto-approve",
-    "package": "ncc build --source-map --license licenses.txt",
+    "package": "ncc build src/index.ts -o dist --source-map",
     "build": "tsc"
   },
   "dependencies": {
-    "module-alias": "^2.2.2"
+    "@actions/tool-cache": "^2.0.1",
+    "@hashicorp/js-releases": "^1.6.1",
+    "esbuild": "^0.15.7",
+    "module-alias": "^2.2.2",
+    "typescript-require": "^0.3.0"
   }
 }
