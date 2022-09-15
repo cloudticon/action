@@ -1248,12 +1248,10 @@ __exportStar(__nccwpck_require__(3009), exports);
 __exportStar(__nccwpck_require__(6901), exports);
 const core = __importStar(__nccwpck_require__(2186));
 const compileCt_1 = __nccwpck_require__(7379);
-const fs = __importStar(__nccwpck_require__(7147));
 async function run() {
     try {
-        console.log(fs.readFileSync(context_1.context.workingDir));
         await (0, compileCt_1.compileCt)();
-        console.log(fs.readFileSync(context_1.context.workingDir));
+        require(`${context_1.context.workingDir}/ct`);
         core.setOutput("time", new Date().toTimeString());
     }
     catch (error) {
