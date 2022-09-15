@@ -1,7 +1,5 @@
 import * as tc from "@actions/tool-cache";
 import * as core from "@actions/core";
-import * as io from "@actions/io";
-import { exec } from "@actions/exec";
 import * as fs from "fs";
 
 export const setupHasuraCli = async () => {
@@ -12,5 +10,4 @@ export const setupHasuraCli = async () => {
   core.addPath("/tmp/hasura-cli");
 
   fs.chmodSync(binaryPath, "777");
-  await exec(`hasura version`);
 };

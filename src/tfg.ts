@@ -16,6 +16,7 @@ export const generateOutputs = (outputs: Record<string, Input<string>>) => {
   );
   tfg.resource("kubernetes_config_map_v1", "outputs", {
     metadata: {
+      name: "outputs",
       namespace: getNamespace(),
     },
     data: map(outputs),
@@ -26,6 +27,9 @@ export const generateServices = () => {
   for (let service of services) {
     service.toTf();
   }
+};
+
+export const writeTf = () => {
   tfg.write({ dir: context.workingDir, format: true });
 };
 export const tfg = new TerraformGenerator({

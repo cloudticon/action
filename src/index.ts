@@ -3,7 +3,7 @@ import { ModuleKind, ScriptTarget } from "typescript";
 
 import { addAlias } from "module-alias";
 import { context } from "./context";
-import { generateOutputs, generateServices } from "./tfg";
+import { generateOutputs, generateServices, writeTf } from "./tfg";
 import { setupTerraform } from "./utils/installTerraform";
 import { runTerraform } from "./utils/runTerraform";
 import { setupCreds } from "./utils/setupCreds";
@@ -21,14 +21,10 @@ export const run = async () => {
   await setupHasuraCli();
   await setupCreds();
   await setupTerraform();
-  const outputs = compileAndRequire(`${context.workingDir}/ct`, {
-    noEmitOnError: false,
-    noImplicitAny: true,
-    target: ScriptTarget.ES5,
-    module: ModuleKind.CommonJS,
-  });
-  generateServices();
+  const outputs = compileAndRequire(`${context.workingDir}/ct`);
   generateOutputs(outputs);
+  generateServices();
+  writeTf();
   await runTerraform(["init"]);
   await runTerraform(["apply", "-auto-approve"]);
 };
