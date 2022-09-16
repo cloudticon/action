@@ -1,4 +1,5 @@
 set -x;
+set -e;
 
 CTX=$1
 IMAGE=$2
