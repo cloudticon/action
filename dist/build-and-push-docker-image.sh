@@ -4,7 +4,8 @@ set -e;
 CTX=$1
 IMAGE=$2
 
-ls -la /tmp/docker-cache/blobs
+ls -la /tmp/docker-cache/blobs/sha256
+git --no-pager  diff --name-only
 docker build $CTX \
     -t $IMAGE \
     --build-arg BUILDKIT_CONTEXT_KEEP_GIT_DIR=1 \
