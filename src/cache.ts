@@ -7,14 +7,14 @@ const dockerCacheKey = `ct-docker-${context.project}-${context.repository}-${con
 
 export const restoreCache = async (scopes: Terraform[]) => {
   await Promise.all([
-    cache.restoreCache(["/tmp/docker-cache"], dockerCacheKey),
+    // cache.restoreCache(["/tmp/docker-cache"], dockerCacheKey),
     cache.restoreCache(scopesPaths(scopes), terraformCacheKey),
   ]);
 };
 
 export const saveCache = async (scopes: Terraform[]) => {
   await Promise.all([
-    cache.saveCache(["/tmp/docker-cache"], dockerCacheKey),
+    // cache.saveCache(["/tmp/docker-cache"], dockerCacheKey),
     cache.saveCache(scopesPaths(scopes), terraformCacheKey),
   ]);
 };

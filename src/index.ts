@@ -10,6 +10,9 @@ import { terraformProjectBranchScope } from "./terraform/terraformProjectBranchS
 import { terraformRepositoryBranchScope } from "./terraform/terraformRepositoryBranchScope";
 import { setupBuildx } from "./utils/setupBuildx";
 import { restoreCache, saveCache } from "./cache";
+import { context } from "./context";
+import { fetchValues } from "./ctClient";
+import { terraformRepository } from "./terraform/terraformRepository";
 
 export * from "./components";
 export * from "./legacy/getValues";
@@ -20,22 +23,26 @@ export * from "./legacy/getRepositoryOutput";
 addAlias("cloudticon", __dirname + "/index.js");
 
 export const run = async () => {
-  const cmd = core.getInput("cmd") as TerraformCmd;
-
-  const values = {
-    domain: `payticon.dev2.cloudticon.com`,
-  };
+  const cmd = getCmd();
+  const values = await fetchValues();
 
   await setupCreds();
   await setupBuildx();
   await setupHasuraCli();
   await setupTerraform();
 
+  const repositoryScore = await terraformRepository();
   const projectBranchScope = await terraformProjectBranchScope();
   const repositoryBranchScope = await terraformRepositoryBranchScope();
   repositoryBranchScope.setVariables(values);
 
-  await restoreCache([projectBranchScope, repositoryBranchScope]);
+  if (cmd === "apply") {
+    await restoreCache([
+      repositoryScore,
+      projectBranchScope,
+      repositoryBranchScope,
+    ]);
+  }
 
   const { services, outputs } = await compileAndRequireCtFile(
     repositoryBranchScope
@@ -43,19 +50,43 @@ export const run = async () => {
   repositoryBranchScope.setOutput(outputs);
   repositoryBranchScope.setServices(services);
 
+  await Promise.all([
+    repositoryScore.init(),
+    projectBranchScope.init(),
+    repositoryBranchScope.init(),
+  ]);
+
   switch (cmd) {
     case "plan":
     case "apply":
+      await repositoryScore.cmd(cmd);
       await projectBranchScope.cmd(cmd);
       await repositoryBranchScope.cmd(cmd);
       break;
     case "destroy":
       await repositoryBranchScope.cmd(cmd);
       await projectBranchScope.cmd(cmd);
+      await repositoryScore.cmd(cmd);
       break;
   }
 
-  await saveCache([projectBranchScope, repositoryBranchScope]);
+  if (cmd === "apply") {
+    await saveCache([
+      repositoryScore,
+      projectBranchScope,
+      repositoryBranchScope,
+    ]);
+  }
 };
 
+const getCmd = (): TerraformCmd => {
+  if (context.eventName === "delete") {
+    return "destroy";
+  }
+  const cmd = core.getInput("cmd") as TerraformCmd;
+  if (cmd) {
+    return cmd;
+  }
+  return "apply";
+};
 run().then();

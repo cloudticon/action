@@ -8,6 +8,8 @@ import {
   registerGlobalService,
   globalTerraform,
 } from "./utils/compileAndRequireCtFile";
+import { getDockerCreds } from "./utils/setupCreds";
+import { getSentry } from "./utils/getSentry";
 
 export type ServiceBuildInput = {
   context: string;
@@ -84,9 +86,10 @@ export class Service {
     this.volumes = input.volumes || [];
     this.publicPrefixes = input.publicPrefixes || ["/"];
     if (input.build) {
+      const creds = getDockerCreds();
       this.dockerImage = new DockerImage({
         name: this.name,
-        image: `registry.cloudticon.com/deploy-test/${this.name}:latest`,
+        image: `${creds.url}/${context.project}/${this.name}:${process.env.GITHUB_SHA}`,
         build: true,
         ...(typeof input.build !== "boolean" ? input.build : {}),
       });
@@ -103,6 +106,13 @@ export class Service {
     this.kubeService = new Resource("kubernetes_service", this.name);
     this.kubeDeployment = new Resource(this.deployType, this.name);
     this.kubeIngress = new Resource("kubernetes_ingress_v1", this.name);
+
+    const sentry = getSentry();
+    if (sentry) {
+      this.env("SENTRY_DSN", sentry.dns);
+      this.env("SENTRY_NAME", this.name);
+      this.env("SENTRY_ENVIRONMENT", context.branch);
+    }
     registerGlobalService(this);
   }
 

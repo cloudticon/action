@@ -1,50 +1,42 @@
-import { heredoc, map } from "terraform-generator";
-import { getDockerCreds } from "../utils/setupCreds";
+import { map } from "terraform-generator";
+import { getCtCreds } from "../utils/setupCreds";
 import { context } from "../context";
 import { Terraform } from "./Terraform";
-import { getNamespace } from "../utils/getNamespace";
 
-export const terraformProjectBranchScope = () => {
-  const dir = `/tmp/.ct/project-branch`;
-  const dockerCreds = getDockerCreds();
+export const terraformRepository = () => {
+  const dir = `/tmp/.ct/repository`;
+  const creds = getCtCreds().sentry;
 
-  const tf = new Terraform(`${context.project}-${context.branch}`, dir, {
+  const tf = new Terraform(`${context.project}-${context.repository}`, dir, {
     required_version: ">= 0.12",
     required_providers: {
-      kubernetes: map({
-        source: "hashicorp/kubernetes",
-        version: "2.13.1",
+      sentry: map({
+        source: "jianyuan/sentry",
+        version: "0.9.4",
       }),
     },
   });
 
-  tf.provider("kubernetes", {});
-
-  const namespace = tf.resource("kubernetes_namespace_v1", "default", {
-    metadata: {
-      name: getNamespace(),
-    },
+  tf.provider("sentry", {
+    base_url: creds.url,
+    token: creds.token,
   });
 
-  tf.resource("kubernetes_secret", "ct-registry", {
-    metadata: {
-      name: "ct-registry",
-      namespace: namespace.attr("metadata[0].name"),
-    },
-    data: map({
-      '".dockerconfigjson"': heredoc(
-        JSON.stringify({
-          auths: {
-            [dockerCreds.url]: {
-              username: dockerCreds.user,
-              password: dockerCreds.password,
-              auth: "YWRtaW46N1BpOTE1cjN3ODZmMHY0Mg==",
-            },
-          },
-        })
-      ),
-    }),
-    type: "kubernetes.io/dockerconfigjson",
+  const project = tf.resource("sentry_project", "default", {
+    organization: creds.organization,
+    team: creds.team,
+    name: `${context.project}-${context.repository}`,
+    slug: `${context.project}-${context.repository}`,
+  });
+
+  const key = tf.resource("sentry_key", "default", {
+    organization: creds.organization,
+    project: project.attr("name"),
+    name: "main",
+  });
+
+  tf.output("sentry_dsn", {
+    value: key.attr("dsn_public"),
   });
 
   return tf;

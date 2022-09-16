@@ -110,23 +110,33 @@ export class Hasura extends Service {
   }
 
   toTf() {
-    const scriptPath = path.resolve("scripts/hasura-deploy.sh");
-    new LocalExec({
-      name: `${this.name}-deploy`,
-      command: scriptPath,
-      workingDir: `${context.workingDir}/hasura`,
+    const waitForHealth = new LocalExec({
+      name: `${this.name}-wait-for-health`,
+      command: path.resolve("scripts/waitForHealth.sh"),
       environment: {
-        HASURA_GRAPHQL_ENDPOINT: this.publicUrl,
-        HASURA_GRAPHQL_ADMIN_SECRET: this.adminSecret,
+        URL: `${this.publicUrl}/healthz`,
+        CODE: "200",
+        TIME: "30",
       },
       dependsOn: [
         this.kubeDeployment,
         this.kubeIngress,
         this.functions?.kubeService,
-        this.functions?.kubeService,
+        this.functions?.kubeDeployment,
         this.postgres?.kubeService,
         this.postgres?.kubeDeployment,
       ].filter((d) => !!d),
+    });
+
+    new LocalExec({
+      name: `${this.name}-deploy`,
+      command: path.resolve("scripts/hasura-deploy.sh"),
+      workingDir: `${context.workingDir}/hasura`,
+      environment: {
+        HASURA_GRAPHQL_ENDPOINT: this.publicUrl,
+        HASURA_GRAPHQL_ADMIN_SECRET: this.adminSecret,
+      },
+      dependsOn: [waitForHealth.resource],
     });
     return super.toTf();
   }

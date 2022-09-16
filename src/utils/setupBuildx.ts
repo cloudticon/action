@@ -10,5 +10,7 @@ export const setupBuildx = async () => {
   const binaryPath = await tc.downloadTool(url, "/tmp/docker-buildx/buildx");
   core.addPath("/tmp/docker-buildx");
   fs.chmodSync(binaryPath, "777");
-  await exec("docker buildx create --use");
+  await exec("docker buildx create --use --name ct");
+  await exec("docker buildx inspect --bootstrap --builder ct");
+  await exec("docker buildx install");
 };

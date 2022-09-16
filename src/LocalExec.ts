@@ -11,14 +11,16 @@ export type LocalExecInput = {
   dependsOn?: Resource[];
 };
 export class LocalExec {
+  public resource: Resource;
+
   constructor(input: LocalExecInput) {
-    const exec = globalTerraform.resource("null_resource", input.name, {
+    this.resource = globalTerraform.resource("null_resource", input.name, {
       triggers: map({
         time: Date.now(),
       }),
       depends_on: input.dependsOn,
     });
-    exec.setProvisioners([
+    this.resource.setProvisioners([
       new Provisioner("local-exec", {
         command: input.command,
         working_dir: input.workingDir,

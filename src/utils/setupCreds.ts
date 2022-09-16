@@ -1,41 +1,24 @@
 import * as core from "@actions/core";
-import axios from "axios";
 import * as fs from "fs";
 import { exec } from "@actions/exec";
+import { CtCreds, fetchCreds } from "../ctClient";
 
-type DockerCreds = {
-  url: string;
-  user: string;
-  password: string;
-};
-let creds: {
-  kubeconfig: string;
-  awsAccessKey: string;
-  awsSecretKey: string;
-  docker: DockerCreds;
-};
+let creds: CtCreds;
 
-export const getDockerCreds = () => {
+export const getCtCreds = () => {
   if (!creds) {
     throw new Error("setup creds before use getDockerCreds");
   }
-  return creds.docker;
+  return creds;
+};
+
+export const getDockerCreds = () => {
+  return getCtCreds().docker;
 };
 
 export const setupCreds = async () => {
-  const apikey = core.getInput("apiKey");
-  const response = await axios.post(
-    "https://auth.dev2.cloudticon.com/creds",
-    {},
-    {
-      headers: {
-        "x-api-key": apikey,
-      },
-    }
-  );
-
-  creds = response.data;
-  fs.writeFileSync(`/tmp/kubeconfig`, Buffer.from(creds.kubeconfig, "base64"));
+  creds = await fetchCreds();
+  fs.writeFileSync(`/tmp/kubeconfig`, creds.kubeconfig);
   core.exportVariable("KUBE_CONFIG_PATH", "/tmp/kubeconfig");
   core.exportVariable("AWS_ACCESS_KEY_ID", creds.awsAccessKey);
   core.exportVariable("AWS_SECRET_ACCESS_KEY", creds.awsSecretKey);

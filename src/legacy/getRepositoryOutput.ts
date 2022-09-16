@@ -15,12 +15,12 @@ export const getRepositoryOutput = ({
 }: GetRepositoryOutputParams) => {
   const data = globalTerraform.data(
     "terraform_remote_state",
-    `${repository}-${branch}`,
+    `${project}-${repository}-${branch}`,
     {
       backend: "s3",
       config: map({
         bucket: "cloudticon",
-        key: `waw/${project}-${repository}/${branch}`,
+        key: `waw/${project}-${repository}-${branch}`,
         region: "eu-central-1",
       }),
     }

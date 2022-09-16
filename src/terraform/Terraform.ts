@@ -5,6 +5,8 @@ import { getNamespace } from "../utils/getNamespace";
 import { Input } from "../types";
 import { Service } from "../Service";
 import * as fs from "fs";
+import { context } from "../context";
+import { ExecOptions } from "@actions/exec";
 
 export type TerraformCmd = "apply" | "destroy" | "plan";
 
@@ -43,27 +45,22 @@ export class Terraform extends TerraformGenerator {
 
   public async apply() {
     core.info(`Apply terraform ${this.name}`);
-    this.write();
-    await this.init();
     await this.exec(["apply", "-auto-approve"]);
   }
 
   public async plan() {
     core.info(`Plan terraform ${this.name}`);
-    this.write();
-    await this.init();
     await this.exec(["plan"]);
   }
 
   public async destroy() {
     core.info(`Destroy terraform ${this.name}`);
-    this.write();
-    await this.init();
     await this.exec(["destroy", "-auto-approve"]);
   }
 
   public async init() {
-    await this.exec(["init"]);
+    this.write();
+    await this.exec(["init"], { silent: true });
   }
 
   public write() {
@@ -90,7 +87,7 @@ export class Terraform extends TerraformGenerator {
     );
     this.resource("kubernetes_config_map_v1", "outputs", {
       metadata: {
-        name: "outputs",
+        name: `${context.repository}-outputs`,
         namespace: getNamespace(),
       },
       data: map(outputs),
@@ -118,9 +115,10 @@ export class Terraform extends TerraformGenerator {
     }
   }
 
-  private async exec(args: string[]) {
+  private async exec(args: string[], ots: ExecOptions = {}) {
     await exec.exec(`terraform`, args, {
       cwd: this.dir,
+      ...ots,
     });
   }
 }
