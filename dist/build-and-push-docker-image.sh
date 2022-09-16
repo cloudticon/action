@@ -10,6 +10,3 @@ docker buildx build $CTX \
     --cache-from type=gha \
     --cache-to type=gha,mode=max \
     --push
-
-rm -rf /tmp/docker-cache
-mv /tmp/docker-cache-new /tmp/docker-cache
