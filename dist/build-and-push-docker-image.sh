@@ -7,8 +7,8 @@ IMAGE=$2
 docker buildx build $CTX \
     -t $IMAGE \
     --build-arg BUILDKIT_CONTEXT_KEEP_GIT_DIR=1 \
-    --cache-from type=local,mode=max,src=/tmp/docker-cache \
-    --cache-to type=local,mode=max,dest=/tmp/docker-cache-new \
+    --cache-from type=gha \
+    --cache-to type=gha,mode=max \
     --push
 
 rm -rf /tmp/docker-cache
