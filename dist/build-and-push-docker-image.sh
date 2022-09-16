@@ -6,7 +6,7 @@ IMAGE=$2
 
 ls -la /tmp/docker-cache
 docker buildx ls
-
+docker load
 docker build $CTX \
     -t $IMAGE \
     --build-arg BUILDKIT_CONTEXT_KEEP_GIT_DIR=1 \
