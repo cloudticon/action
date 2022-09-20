@@ -1,7 +1,11 @@
 {
-  "name": "deploy",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "main": "lib/index.js",
+  "files": [
+    "lib"
+  ],
+  "name": "cloudticon",
+  "types": "lib/index.d.ts",
   "license": "MIT",
   "_moduleAliases": {
     "cloudticon": "./dist/index"
@@ -21,7 +25,8 @@
   "scripts": {
     "test": "WK=/home/krs/Projects/payticon/frontend-eshop ts-node src/index.ts && cd /home/krs/Projects/payticon/frontend-eshop  && terraform init && terraform apply -auto-approve",
     "package": "ncc build src/index.ts -o dist --source-map",
-    "build": "tsc"
+    "build": "tsc && touch lib/index.js",
+    "push": "yarn build &&yarn version --patch && npm publish"
   },
   "dependencies": {
     "@actions/cache": "^3.0.4",
