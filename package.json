@@ -25,8 +25,9 @@
   "scripts": {
     "test": "WK=/home/krs/Projects/payticon/frontend-eshop ts-node src/index.ts && cd /home/krs/Projects/payticon/frontend-eshop  && terraform init && terraform apply -auto-approve",
     "package": "ncc build src/index.ts -o dist --source-map",
-    "build": "tsc && touch lib/index.js",
-    "push": "yarn build &&yarn version --patch && npm publish"
+    "build": "tsc -p tsconfig-declarations.json && touch lib/index.js",
+    "push": "yarn build && yarn version --patch && npm publish",
+    "deploy": "yarn package && git add dist && git commit -m 'up' && git push"
   },
   "dependencies": {
     "@actions/cache": "^3.0.4",

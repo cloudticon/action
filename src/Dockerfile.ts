@@ -4,6 +4,7 @@ import { getJsPackageManagerType } from "./utils/getJsPackageManagerType";
 import { getPackageJson } from "./utils/getPackageJson";
 import { LocalFile } from "./LocalFile";
 import { heredoc } from "terraform-generator";
+import { context } from "./context";
 
 export class DockerfileBuilder {
   private lines: string[] = [];
@@ -98,7 +99,7 @@ export class DockerfileBuilder {
   toTf() {
     const resource = new LocalFile({
       name: `dockerfile-${Date.now()}`,
-      filename: "Dockerfile",
+      filename: `${context.workingDir}/Dockerfile`,
       content: heredoc(this.toString()),
     });
 

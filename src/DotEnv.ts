@@ -3,8 +3,7 @@ import { Input } from "./types";
 import * as fs from "fs";
 import * as path from "path";
 import { context } from "./context";
-import { heredoc, map } from "terraform-generator";
-import { Resource } from "terraform-generator/dist/blocks";
+import { heredoc } from "terraform-generator";
 
 export type DotEnvInput = {
   name: string;
@@ -19,7 +18,7 @@ export class DotEnv extends LocalFile {
       .join("\n");
     super({
       name,
-      filename: ".env",
+      filename: `${context.workingDir}/.env`,
       content: heredoc(content),
     });
   }

@@ -1,6 +1,7 @@
 import { Terraform } from "./Terraform";
 import { map } from "terraform-generator";
 import { context } from "../context";
+import { getCtCreds } from "../utils/setupCreds";
 
 export const terraformRepositoryBranchScope = () => {
   const dir = `/tmp/.ct/repository-branch`;
@@ -26,6 +27,13 @@ export const terraformRepositoryBranchScope = () => {
           source: "hashicorp/random",
           version: "3.4.3",
         }),
+        cloudflare: map({
+          source: "cloudflare/cloudflare",
+          version: "3.23.0",
+        }),
+        local: map({
+          source: "hashicorp/local",
+        }),
       },
     }
   );
@@ -35,6 +43,10 @@ export const terraformRepositoryBranchScope = () => {
   tf.provider("null", {});
 
   tf.provider("kubernetes", {});
+
+  tf.provider("cloudflare", {
+    api_token: getCtCreds().cloudflare.token,
+  });
 
   return tf;
 };

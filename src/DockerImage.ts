@@ -47,7 +47,7 @@ export class DockerImage {
     }
   }
 
-  addBuildDependsOn(id: Attribute) {
-    this.buildResource.setArgument("depends_on", [id]);
+  addBuildDependsOn(resource: Resource) {
+    this.buildResource.setArgument("depends_on", [resource]);
   }
 }

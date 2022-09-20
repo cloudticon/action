@@ -16,7 +16,7 @@ export class Postgres extends Service {
     user = "postgres",
     database = "postgres",
     password,
-    version = "12",
+    version = "14",
     volumeSize = "10Gi",
     ...input
   }: PostgresInput) {

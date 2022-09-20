@@ -6,6 +6,8 @@ export type CtCreds = {
   kubeconfig: string;
   awsAccessKey: string;
   awsSecretKey: string;
+  baseDomain: string;
+  baseIp: string;
   docker: {
     url: string;
     user: string;
@@ -16,6 +18,12 @@ export type CtCreds = {
     token: string;
     organization: string;
     team: string;
+  };
+  discord?: {
+    webhook: string;
+  };
+  cloudflare?: {
+    token: string;
   };
 };
 

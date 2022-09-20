@@ -1,4 +1,4 @@
-import { map } from "terraform-generator";
+import { list, map } from "terraform-generator";
 import { context } from "./context";
 import { DockerImage } from "./DockerImage";
 import { Input } from "./types";
@@ -8,7 +8,7 @@ import {
   registerGlobalService,
   globalTerraform,
 } from "./utils/compileAndRequireCtFile";
-import { getDockerCreds } from "./utils/setupCreds";
+import { getCtCreds, getDockerCreds } from "./utils/setupCreds";
 import { getSentry } from "./utils/getSentry";
 
 export type ServiceBuildInput = {
@@ -46,6 +46,7 @@ export type ServiceInput = {
 };
 
 export class Service {
+  public customDomain: Input<string>;
   public host: Input<string>;
   public envs: Record<string, Input<string>>;
   public checks: ServiceHealthCheck[];
@@ -78,9 +79,9 @@ export class Service {
   }
 
   constructor(public input: ServiceInput) {
-    this.host = input.customDomain
-      ? input.customDomain
-      : `${context.repository}-${this.name}-${context.branch}.dev2.cloudticon.com`;
+    this.customDomain = input.customDomain;
+    this.host = input.customDomain ? input.customDomain : this.getDefaultHost();
+
     this.envs = input.env || {};
     this.checks = input.checks || [];
     this.volumes = input.volumes || [];
@@ -128,6 +129,11 @@ export class Service {
 
   link(service: Service) {
     return this;
+  }
+
+  getDefaultHost() {
+    const creds = getCtCreds();
+    return `${context.project}-${context.repository}-${context.branch}.${creds.baseDomain}`;
   }
 
   toTf() {
@@ -231,6 +237,19 @@ export class Service {
       deployArgs
     );
 
+    // if (this.customDomain) {
+    //   const zone = globalTerraform.data("cloudflare_zone", "zone", {
+    //     name: "futuremind.com.pl",
+    //   });
+    //   globalTerraform.resource("cloudflare_record", "custom_domain", {
+    //     zone_id: zone.attr("id"),
+    //     name: this.customDomain,
+    //     value: getCtCreds().baseIp,
+    //     type: "A",
+    //     proxied: true,
+    //   });
+    // }
+
     this.kubeIngress = globalTerraform.resource(
       "kubernetes_ingress_v1",
       this.name,
@@ -238,21 +257,17 @@ export class Service {
         metadata: {
           name: this.name,
           namespace: getNamespace(),
-          annotations: map({
-            // '"cert-manager.io/cluster-issuer"': "letsencrypt-prod",
-            // '"acme.cert-manager.io/http01-edit-in-place"': "true",
-            // '"kubernetes.io/ingress.class"': "haproxy",
-            // '"haproxy-ingress.github.io/balance-algorithm"': "roundrobin",
-            // '"haproxy-ingress.github.io/blue-green-deploy"':
-            //   "group=blue=1,group=green=1",
-            // '"haproxy-ingress.github.io/blue-green-mode"': "pod",
-            // '"haproxy-ingress.github.io/ssl-redirect"': "false",
-          }),
+          annotations: this.customDomain
+            ? map({
+                '"cert-manager.io/cluster-issuer"': "letsencrypt-prod",
+              })
+            : map({}),
         },
         spec: {
           ingress_class_name: "haproxy",
           tls: {
             hosts: [this.host],
+            secret_name: this.customDomain ? this.customDomain : undefined,
           },
           rule: {
             host: this.host,
@@ -274,5 +289,41 @@ export class Service {
         },
       }
     );
+
+    // globalTerraform.resource(
+    //   "kubernetes_manifest",
+    //   `${this.name}_virtual_service`,
+    //   {
+    //     manifest: map({
+    //       apiVersion: "networking.istio.io/v1alpha3",
+    //       kind: "VirtualService",
+    //       metadata: map({
+    //         name: this.name,
+    //         namespace: getNamespace(),
+    //       }),
+    //       spec: map({
+    //         gateways: ["knative-serving/knative-ingress-gateway"],
+    //         hosts: [this.host],
+    //         http: list({
+    //           match: list(
+    //             ...this.publicPrefixes.map((p) => ({
+    //               uri: map({
+    //                 prefix: p,
+    //               }),
+    //             }))
+    //           ),
+    //           route: list({
+    //             destination: map({
+    //               host: this.name,
+    //               port: map({
+    //                 number: this.port,
+    //               }),
+    //             }),
+    //           }),
+    //         }),
+    //       }),
+    //     }),
+    //   }
+    // );
   }
 }

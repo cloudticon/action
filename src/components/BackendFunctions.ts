@@ -6,6 +6,7 @@ import { Postgres } from "./Postgres";
 import { LocalFile } from "../LocalFile";
 import * as fs from "fs";
 import { isDockerFileExist } from "../utils/isDockerFileExist";
+import { context } from "../context";
 
 export type BackendFunctionsInput = ServiceInput & {
   extendsConfig?: boolean;
@@ -69,11 +70,11 @@ export class BackendFunctions extends Service {
     const content = BackendFunctions.getConfigContent(config, extendsConfig);
     this.configFile = new LocalFile({
       name: `${this.name}-config-file`,
-      filename: ".functions-config.json",
+      filename: `${context.workingDir}/.functions-config.json`,
       content,
     });
 
-    this.dockerImage.addBuildDependsOn(this.configFile.id);
+    this.dockerImage.addBuildDependsOn(this.configFile.resource);
   }
 
   private static getConfigContent(
@@ -90,7 +91,7 @@ export class BackendFunctions extends Service {
 
     configObject = {
       ...configObject,
-      config,
+      ...config,
     };
 
     return JSON.stringify(configObject, null, 2);
