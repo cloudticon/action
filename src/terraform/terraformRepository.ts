@@ -18,7 +18,7 @@ export const terraformRepository = () => {
   });
 
   tf.provider("sentry", {
-    base_url: creds.url,
+    base_url: `${creds.url}/api/`,
     token: creds.token,
   });
 
@@ -37,6 +37,10 @@ export const terraformRepository = () => {
 
   tf.output("sentry_dsn", {
     value: key.attr("dsn_public"),
+  });
+
+  tf.output("sentry_project_name", {
+    value: project.attr("name"),
   });
 
   return tf;

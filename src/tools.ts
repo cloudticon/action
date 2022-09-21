@@ -41,4 +41,5 @@ export const tools = {
   pay: new ToolOutput("payticon-pay"),
   info: new ToolOutput("infoticon"),
   auth: new ToolOutput("authticon"),
+  doc: new ToolOutput("docticon"),
 };

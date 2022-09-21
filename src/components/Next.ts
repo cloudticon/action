@@ -1,40 +1,23 @@
-import { PublicContainer, PublicContainerInput } from "./";
-import {
-  ComponentSize,
-  Input,
-  ResourceInput,
-  SourceScanResult,
-} from "../../../types";
-import { DotEnv, Service } from "../resources";
-import { SentryProject } from "../../sentry";
-import { getContext } from "../../../utils";
-import { Source } from "../../../core/Source";
-import { BuildableJsDockerfileBuilder } from "../../../core/Dockerfile";
+import { Service, ServiceInput } from "../Service";
+import { DotEnv } from "../DotEnv";
+import { BuildableJsDockerfileBuilder } from "../Dockerfile";
+import { getSentry } from "../utils/getSentry";
+import { context } from "../context";
 
-export type NextInput = PublicContainerInput &
-  Input<{
-    name: string;
-    size?: ComponentSize;
-    buildEnvExtends?: string[];
-    buildEnv?: Record<string, string>;
-    resources?: ResourceInput;
-    dockerfile?: string;
-    context?: string;
-    enableSentry?: boolean;
-  }>;
+export type NextInput = ServiceInput & {
+  name: string;
+  size?: any;
+  buildEnvExtends?: string[];
+  buildEnv?: Record<string, string>;
+  resources?: any;
+  dockerfile?: string;
+  context?: string;
+  enableSentry?: boolean;
+};
 
-export class Next extends PublicContainer {
-  static sizeResources: Record<ComponentSize, ResourceInput> = {
-    xs: { cpu: 300, memory: 128 },
-    sm: { cpu: 300, memory: 128 },
-    md: { cpu: 1000, memory: 512 },
-    lg: { cpu: 300, memory: 128 },
-    xl: { cpu: 300, memory: 128 },
-  };
-
+export class Next extends Service {
   public dotEnv?: DotEnv;
   public service: Service;
-  public sentry?: SentryProject;
 
   public static createDockerFile() {
     return new (class extends BuildableJsDockerfileBuilder {
@@ -56,60 +39,30 @@ export class Next extends PublicContainer {
     })().build();
   }
 
-  static check(scan: SourceScanResult, source: Source) {
-    return !!scan.packageJsons["."]?.dependencies["next"];
-  }
-
-  static default(scan: SourceScanResult, source: Source) {
-    const packageJson = scan.packageJsons["."];
-
-    const next = new Next({
-      name: packageJson.name,
-      size: "md",
-    });
-
-    return {
-      url: next.publicUrl,
-    };
-  }
-
   constructor({
     name,
     size = "sm",
     buildEnv,
     buildEnvExtends = [],
-    resources = Next.sizeResources[size],
     dockerfile = Next.createDockerFile(),
-    context = ".",
     enableSentry = true,
     ...input
   }: NextInput) {
-    let sentry: SentryProject;
     let env: any = {};
-
-    if (enableSentry) {
-      const { repository, project, branch } = getContext();
-      sentry = new SentryProject(name, {
-        name: `${project.name}-${repository.name}`,
-        team: "frontend",
-        organization: "devticon",
-        platform: "javascript-nextjs",
-      });
-      env = {
-        SENTRY_URL: "https://sentry.cloudticon.com/",
-        SENTRY_ORG: sentry.organization,
-        SENTRY_PROJECT: sentry.slug,
-        SENTRY_AUTH_TOKEN: process.env.SENTRY_TOKEN,
-        NEXT_PUBLIC_SENTRY_DSN: sentry.dsn,
-        NEXT_PUBLIC_SENTRY_ENVIRONMENT: branch.name,
-        SENTRY_DSN: sentry.dsn,
-        SENTRY_ENVIRONMENT: branch.name,
-      };
+    let dotEnv: DotEnv;
+    const sentry = getSentry();
+    if (sentry) {
+      env["SENTRY_URL"] = `${sentry.url}/`;
+      env["SENTRY_ORG"] = sentry.organization;
+      env["SENTRY_PROJECT"] = sentry.project;
+      env["SENTRY_AUTH_TOKEN"] = sentry.token;
+      env["NEXT_PUBLIC_SENTRY_DSN"] = sentry.dns;
+      env["NEXT_PUBLIC_SENTRY_ENVIRONMENT"] = context.branch;
     }
 
-    let dotEnv: DotEnv;
     if (buildEnv) {
-      dotEnv = new DotEnv(`${name}/.env`, {
+      dotEnv = new DotEnv({
+        name: `${name}_dot_env`,
         env: {
           ...env,
           ...buildEnv,
@@ -121,17 +74,15 @@ export class Next extends PublicContainer {
     super({
       name,
       port: 3000,
-      resources,
       isDefaultService: true,
       build: {
         dockerfile,
-        context,
-        dependsOn: dotEnv ? [dotEnv] : [],
+        context: ".",
+        dependsOn: dotEnv ? [dotEnv.resource] : [],
       },
       ...input,
     });
 
     this.dotEnv = dotEnv;
-    this.sentry = sentry;
   }
 }

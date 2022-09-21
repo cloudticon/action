@@ -12,22 +12,15 @@ export const sendNotify = async (e?: Error) => {
   if (e) {
     await sendDiscordMessage(discord.webhook, {
       color: 0xff0000,
-      title: "Action failed",
-      author: {
-        name,
-        url,
-      },
-      description: `@everyone 🤦 ${e.message}`,
+      title: `${name} fail`,
+      description: `@everyone [action](${url})`,
       timestamp: new Date().toISOString(),
     });
   } else {
     await sendDiscordMessage(discord.webhook, {
       color: 0x7fff00,
-      title: "Action success",
-      author: {
-        name,
-        url,
-      },
+      title: `${name} success`,
+      description: `[action](${url})`,
       timestamp: new Date().toISOString(),
     });
   }

@@ -25,6 +25,7 @@ export const getSentry = () => {
     return {
       ...sentry,
       dns: data.attr("outputs").attr("sentry_dsn"),
+      project: data.attr("outputs").attr("sentry_project_name"),
     };
   }
 };

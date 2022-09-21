@@ -35,12 +35,13 @@ export type ServiceInput = {
   port?: number;
   count?: number;
   customDomain?: Input<string>;
+  customDomains?: Input<string>[];
   links?: Service[];
   env?: Record<string, Input<string>>;
   isDefaultService?: boolean;
   autoscaling?: boolean;
   volumes?: ServiceVolume[];
-  checks?: ServiceHealthCheck[];
+  checks?: ServiceHealthCheck;
   publicPrefixes?: string[];
   resources?: any;
 };
@@ -49,7 +50,7 @@ export class Service {
   public customDomain: Input<string>;
   public host: Input<string>;
   public envs: Record<string, Input<string>>;
-  public checks: ServiceHealthCheck[];
+  public healthCheck: ServiceHealthCheck;
   public volumes: ServiceVolume[];
   public kubeService: Resource;
   public kubeDeployment: Resource;
@@ -83,7 +84,7 @@ export class Service {
     this.host = input.customDomain ? input.customDomain : this.getDefaultHost();
 
     this.envs = input.env || {};
-    this.checks = input.checks || [];
+    this.healthCheck = input.checks;
     this.volumes = input.volumes || [];
     this.publicPrefixes = input.publicPrefixes || ["/"];
     if (input.build) {
@@ -123,7 +124,7 @@ export class Service {
   }
 
   check(path: string) {
-    this.checks.push({ path });
+    this.healthCheck = { path };
     return this;
   }
 
@@ -196,12 +197,14 @@ export class Service {
                 name,
                 value,
               })),
-              liveness_probe: this.checks.map((check) => ({
-                http_get: {
-                  path: check.path,
-                  port: this.port,
-                },
-              })),
+              liveness_probe: this.healthCheck
+                ? {
+                    http_get: {
+                      path: this.healthCheck.path,
+                      port: this.port,
+                    },
+                  }
+                : undefined,
             },
           },
         },

@@ -16,12 +16,14 @@ import { terraformRepository } from "./terraform/terraformRepository";
 import { sendNotify } from "./sendNotify";
 
 export * from "./components";
+export * from "./Service";
 export * from "./legacy/getValues";
 export * from "./utils/getContext";
 export * from "./legacy/interpolate";
 export * from "./legacy/getRepositoryOutput";
 export * from "./tools";
 export * from "./utils/getBackendOutput";
+export * from "./utils/isMaster";
 
 addAlias("cloudticon", __dirname + "/index.js");
 

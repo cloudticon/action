@@ -46,6 +46,9 @@ export class BackendFunctions extends Service {
         : BackendFunctions.createDockerFile(),
     },
     port = 8080,
+    checks = {
+      path: "/heatlh-live",
+    },
     ...containerInput
   }: BackendFunctionsInput) {
     super({ ...containerInput, build, port });

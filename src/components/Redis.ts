@@ -1,15 +1,13 @@
-import { Container, ContainerInput } from "./";
-import { Input } from "../../../types";
-import { interpolate } from "../../../utils";
+import { Service, ServiceInput } from "../Service";
+import { Input } from "../types";
 
-export type RedisInput = Omit<ContainerInput, "build" | "image"> &
-  Input<{
-    version?: string;
-  }>;
+export type RedisInput = Omit<ServiceInput, "build" | "image"> & {
+  version?: Input<string>;
+};
 
-export class Redis extends Container {
+export class Redis extends Service {
   public get redisLinkUrl() {
-    return interpolate`redis://${this.linkUrl}`;
+    return `redis://${this.linkUrl}`;
   }
 
   constructor({ name, version = "latest", ...input }: RedisInput) {

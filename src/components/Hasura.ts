@@ -57,6 +57,9 @@ export class Hasura extends Service {
     customDomain,
     publicPrefixes = Hasura.publicPrefixes,
     deploy = true,
+    checks = {
+      path: "/heatlh-live",
+    },
     ...input
   }: HasuraInput) {
     super({
@@ -66,6 +69,7 @@ export class Hasura extends Service {
       resources,
       customDomain,
       publicPrefixes,
+      checks,
       ...input,
     });
 
