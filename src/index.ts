@@ -17,6 +17,7 @@ import { sendNotify } from "./sendNotify";
 
 export * from "./components";
 export * from "./Service";
+export * from "./RandomPassword";
 export * from "./legacy/getValues";
 export * from "./utils/getContext";
 export * from "./legacy/interpolate";

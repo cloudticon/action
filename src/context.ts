@@ -1,9 +1,21 @@
 import * as fs from "fs";
-
-const event = JSON.parse(
+type GithubEvent = {
+  sender: {
+    avatar_url: string;
+    login: string;
+    url: string;
+  };
+  head_commit: {
+    message: string;
+  };
+};
+const event: GithubEvent = JSON.parse(
   fs.readFileSync(process.env.GITHUB_EVENT_PATH, "utf8")
 );
 console.log(event);
+export const getGithubEvent = () => {
+  return event;
+};
 const getBranch = () => {
   if (process.env.GITHUB_EVENT_NAME === "delete") {
     const event = JSON.parse(

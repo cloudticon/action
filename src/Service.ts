@@ -29,7 +29,7 @@ export type ServiceHealthCheck = {
 
 export type ServiceInput = {
   name: string;
-  command?: string;
+  command?: Input<string[]>;
   image?: Input<string>;
   build?: boolean | ServiceBuildInput;
   port?: number;
@@ -49,6 +49,7 @@ export type ServiceInput = {
 export class Service {
   public customDomain: Input<string>;
   public host: Input<string>;
+  public command: Input<string[]>;
   public envs: Record<string, Input<string>>;
   public healthCheck: ServiceHealthCheck;
   public volumes: ServiceVolume[];
@@ -82,7 +83,7 @@ export class Service {
   constructor(public input: ServiceInput) {
     this.customDomain = input.customDomain;
     this.host = input.customDomain ? input.customDomain : this.getDefaultHost();
-
+    this.command = input.command;
     this.envs = input.env || {};
     this.healthCheck = input.checks;
     this.volumes = input.volumes || [];
@@ -193,6 +194,7 @@ export class Service {
             container: {
               name: this.name,
               image: this.dockerImage.image,
+              command: this.command,
               env: Object.entries(this.envs).map(([name, value]) => ({
                 name,
                 value,
