@@ -10,6 +10,9 @@ import {
 } from "./utils/compileAndRequireCtFile";
 import { getCtCreds, getDockerCreds } from "./utils/setupCreds";
 import { getSentry } from "./utils/getSentry";
+import { isMaster } from "./utils/isMaster";
+
+export type ServiceSize = "xs" | "sm" | "md" | "lg" | "xl";
 
 export type ServiceBuildInput = {
   context: string;
@@ -27,9 +30,13 @@ export type ServiceHealthCheck = {
   path: string;
 };
 
+export type ServiceResources = {
+  requests: { cpu: string; memory: string };
+  limits: { cpu: string; memory: string };
+};
 export type ServiceInput = {
   name: string;
-  command?: Input<string[]>;
+  command?: Input<string>[];
   image?: Input<string>;
   build?: boolean | ServiceBuildInput;
   port?: number;
@@ -43,13 +50,68 @@ export type ServiceInput = {
   volumes?: ServiceVolume[];
   checks?: ServiceHealthCheck;
   publicPrefixes?: string[];
-  resources?: any;
+  resources?: ServiceResources;
+  devCommand?: Input<string>[];
+  size?: ServiceSize;
 };
 
+const serviceSizes: Record<ServiceSize, ServiceResources> = {
+  xs: {
+    requests: {
+      cpu: "50m",
+      memory: "64Mi",
+    },
+    limits: {
+      cpu: "100m",
+      memory: "128Mi",
+    },
+  },
+  sm: {
+    requests: {
+      cpu: "100m",
+      memory: "128Mi",
+    },
+    limits: {
+      cpu: "250m",
+      memory: "256Mi",
+    },
+  },
+  md: {
+    requests: {
+      cpu: "200m",
+      memory: "256Mi",
+    },
+    limits: {
+      cpu: "250m",
+      memory: "256Mi",
+    },
+  },
+  lg: {
+    requests: {
+      cpu: "200m",
+      memory: "256Mi",
+    },
+    limits: {
+      cpu: "250m",
+      memory: "256Mi",
+    },
+  },
+  xl: {
+    requests: {
+      cpu: "200m",
+      memory: "256Mi",
+    },
+    limits: {
+      cpu: "250m",
+      memory: "256Mi",
+    },
+  },
+};
 export class Service {
   public customDomain: Input<string>;
   public host: Input<string>;
-  public command: Input<string[]>;
+  public command?: Input<string>[];
+  public devCommand?: Input<string>[];
   public envs: Record<string, Input<string>>;
   public healthCheck: ServiceHealthCheck;
   public volumes: ServiceVolume[];
@@ -58,6 +120,8 @@ export class Service {
   public kubeIngress: Resource;
   public publicPrefixes: string[];
   public dockerImage: DockerImage;
+  public resources?: ServiceResources;
+  public size?: ServiceSize;
   public deployType: "kubernetes_stateful_set" | "kubernetes_deployment_v1";
 
   get name() {
@@ -84,8 +148,11 @@ export class Service {
     this.customDomain = input.customDomain;
     this.host = input.customDomain ? input.customDomain : this.getDefaultHost();
     this.command = input.command;
+    this.devCommand = input.devCommand;
     this.envs = input.env || {};
     this.healthCheck = input.checks;
+    this.size = input.size || "sm";
+    this.resources = input.resources || serviceSizes[this.size];
     this.volumes = input.volumes || [];
     this.publicPrefixes = input.publicPrefixes || ["/"];
     if (input.build) {
@@ -163,6 +230,7 @@ export class Service {
       }
     );
 
+    const nodePools = isMaster() ? ["prod", "prod-auto"] : ["dev", "dev-auto"];
     const deployArgs: any = {
       metadata: {
         name: this.name,
@@ -186,6 +254,19 @@ export class Service {
             }),
           },
           spec: {
+            affinity: {
+              node_affinity: {
+                required_during_scheduling_ignored_during_execution: {
+                  node_selector_term: [
+                    {
+                      match_expressions: [
+                        { key: "nodepool", operator: "In", values: nodePools },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
             image_pull_secrets: [
               {
                 name: "ct-registry",
@@ -199,6 +280,10 @@ export class Service {
                 name,
                 value,
               })),
+              resources: {
+                requests: map(this.resources.requests),
+                limits: map(this.resources.limits),
+              },
               liveness_probe: this.healthCheck
                 ? {
                     http_get: {
