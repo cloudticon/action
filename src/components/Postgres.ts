@@ -1,6 +1,10 @@
 import { Service, ServiceInput } from "../Service";
 import { Input } from "../types";
 import { RandomPassword } from "../RandomPassword";
+import { CronJob } from "../CronJob";
+import { getCtCreds } from "../utils/setupCreds";
+import { getNamespace } from "../utils/getNamespace";
+import { PostgresBackup } from "./crons";
 
 export type PostgresInput = Omit<ServiceInput, "image" | "build" | "port"> & {
   user?: Input<string>;
@@ -34,6 +38,7 @@ export class Postgres extends Service {
         POSTGRES_DB: database,
         POSTGRES_USER: user,
         POSTGRES_PASSWORD: password,
+        PGDATA: "/lib/postgresql/data/pgdata",
       },
       volumes: [
         {
@@ -45,5 +50,10 @@ export class Postgres extends Service {
     });
 
     this.psqlUrl = `postgres://${user}:${password}@${input.name}:5432/${database}`;
+
+    new PostgresBackup({
+      name: `${this.name}-backup`,
+      psqlUrl: this.psqlUrl,
+    });
   }
 }

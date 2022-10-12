@@ -5,7 +5,7 @@ type GithubEvent = {
     login: string;
     url: string;
   };
-  head_commit: {
+  head_commit?: {
     message: string;
   };
 };
@@ -30,8 +30,8 @@ const getBranch = () => {
 const [project, repository] = process.env.GITHUB_REPOSITORY.split("/");
 
 export const context = {
-  project,
-  repository,
+  project: project.toLowerCase(),
+  repository: repository.toLowerCase(),
   branch: getBranch(),
   workingDir: process.env.GITHUB_WORKSPACE,
   eventName: process.env.GITHUB_EVENT_NAME,

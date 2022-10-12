@@ -17,7 +17,7 @@ export const sendNotify = async (e?: Error) => {
   const fields = [
     {
       name: "commit",
-      value: event.head_commit.message,
+      value: event.head_commit ? event.head_commit.message : "manual trigger",
     },
     {
       name: "action",

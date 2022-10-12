@@ -26,12 +26,12 @@ export const terraformRepository = () => {
     organization: creds.organization,
     team: creds.team,
     name: `${context.project}-${context.repository}`,
-    slug: `${context.project}-${context.repository}`,
+    slug: `${context.project}-${context.repository}`.toLowerCase(),
   });
 
   const key = tf.resource("sentry_key", "default", {
     organization: creds.organization,
-    project: project.attr("name"),
+    project: project.attr("slug"),
     name: "main",
   });
 

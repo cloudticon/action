@@ -25,6 +25,13 @@ export type CtCreds = {
   cloudflare?: {
     token: string;
   };
+  backupS3: {
+    accessKey: string;
+    secretKey: string;
+    endpoint: string;
+    region: string;
+    bucket: string;
+  };
 };
 
 export const ctClient = axios.create({

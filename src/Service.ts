@@ -23,7 +23,7 @@ export type ServiceBuildInput = {
 export type ServiceVolume = {
   name: string;
   path: string;
-  size: string;
+  size: Input<string>;
 };
 
 export type ServiceHealthCheck = {
