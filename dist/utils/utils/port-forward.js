@@ -10,7 +10,12 @@ module.exports = function portForward({
     const subProcess = spawn(
       "kubectl",
       ["port-forward", deployment, `${portForm}:${portTo}`, "-n", namespace],
-      {}
+      {
+        env: {
+          ...process.env,
+          KUBECONFIG: "/tmp/kubeconfig",
+        },
+      }
     );
     subProcess.stdout.on("data", (data) => {
       if (data.toString().includes("Forwarding from")) {
