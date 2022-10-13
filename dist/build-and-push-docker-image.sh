@@ -1,4 +1,3 @@
-set -x;
 set -e;
 
 CTX=$1
