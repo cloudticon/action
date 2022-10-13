@@ -8,7 +8,7 @@ async function main() {
     portTo: process.env.PORT_TO,
     namespace: process.env.NAMESPACE,
   });
-  await exec("yarn", ["prisma", "migrate", "deploy"]);
+  await exec("npx", ["prisma", "migrate", "deploy"]);
   closePortForward();
 }
 main();
