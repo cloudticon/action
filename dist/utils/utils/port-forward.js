@@ -13,7 +13,6 @@ module.exports = function portForward({
       {
         env: {
           ...process.env,
-          KUBECONFIG: "/tmp/kubeconfig",
         },
       }
     );
