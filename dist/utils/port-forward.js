@@ -2,15 +2,26 @@ const { spawn } = require("child_process");
 
 module.exports = function portForward({
   deployment,
-  portForm,
+  portFrom,
   portTo,
   namespace,
 }) {
   return new Promise((resolve, reject) => {
+    console.log([
+      "port-forward",
+      deployment,
+      `${portFrom}:${portTo}`,
+      "-n",
+      namespace,
+    ]);
     const subProcess = spawn(
       "kubectl",
-      ["port-forward", deployment, `${portForm}:${portTo}`, "-n", namespace],
-      {}
+      ["port-forward", deployment, `${portFrom}:${portTo}`, "-n", namespace],
+      {
+        env: {
+          ...process.env,
+        },
+      }
     );
     subProcess.stdout.on("data", (data) => {
       if (data.toString().includes("Forwarding from")) {
