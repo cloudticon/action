@@ -8,10 +8,7 @@ async function main() {
     portTo: process.env.PORT_TO,
     namespace: process.env.NAMESPACE,
   });
-  await exec("yarn", ["prisma", "migrate", "deploy"], {
-    cwd: "/home/krs/Projects/payticon/frontend-eshop",
-    env: process.env,
-  });
+  await exec("yarn", ["prisma", "migrate", "deploy"]);
   closePortForward();
 }
 main();

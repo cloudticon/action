@@ -7,6 +7,13 @@ module.exports = function portForward({
   namespace,
 }) {
   return new Promise((resolve, reject) => {
+    console.log([
+      "port-forward",
+      deployment,
+      `${portFrom}:${portTo}`,
+      "-n",
+      namespace,
+    ]);
     const subProcess = spawn(
       "kubectl",
       ["port-forward", deployment, `${portFrom}:${portTo}`, "-n", namespace],
