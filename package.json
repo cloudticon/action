@@ -1,5 +1,5 @@
 {
-  "version": "1.1.19",
+  "version": "1.1.20",
   "main": "lib/index.js",
   "files": [
     "lib"
@@ -27,7 +27,7 @@
     "package": "ncc build src/index.ts -o dist --source-map",
     "build": "tsc -p tsconfig-declarations.json && touch lib/index.js",
     "push": "yarn build && yarn version --patch && npm publish",
-    "deploy": "yarn package && cp -r scripts/utils dist/utils && git add dist && git commit -m 'up' && git push"
+    "deploy": "yarn package && cp -r scripts/* dist && git add dist && git commit -m 'up' && git push"
   },
   "dependencies": {
     "@actions/cache": "^3.0.4",
