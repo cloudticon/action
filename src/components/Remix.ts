@@ -6,8 +6,6 @@ import { Input } from "../types";
 
 export type RemixInput = ServiceInput & {
   name: string;
-  size?: any;
-  resources?: any;
   dockerfile?: string;
   context?: string;
   enableSentry?: boolean;
@@ -55,7 +53,6 @@ export class Remix extends Service {
 
   constructor({
     name,
-    size = "sm",
     dockerfile = isDockerFileExist() ? "Dockerfile" : Remix.createDockerFile(),
     context = ".",
     enableSentry = true,

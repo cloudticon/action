@@ -7,12 +7,18 @@ export type MongoInput = Omit<ServiceInput, "image" | "build" | "port"> & {
   user?: Input<string>;
   password?: Input<string>;
   version?: Input<string>;
+  database?: Input<string>;
   volumeSize?: Input<string>;
 };
 
 export class Mongo extends Service {
-  public mongoUrl: string;
+  public user: Input<string>;
+  public password: Input<string>;
+  public database: Input<string>;
 
+  get mongoUrl() {
+    return `mongodb://${this.user}:${this.password}@${this.name}:27017/${this.database}?authSource=admin&retryWrites=true&w=majority`;
+  }
   constructor({
     name,
     version = "6.0.2",
@@ -22,6 +28,7 @@ export class Mongo extends Service {
       special: false,
     }).result,
     volumeSize = "6Gi",
+    database = "db",
     ...input
   }: MongoInput) {
     super({
@@ -34,6 +41,8 @@ export class Mongo extends Service {
         MONGO_INITDB_ROOT_PASSWORD: password,
         ...(input.env || {}),
       },
+      command: ["/bin/sh"],
+      args: ["-c", "mongod --replSet=rs0 --bind_ip_all"],
       volumes: [
         {
           name: `${name}-data`,
@@ -43,8 +52,10 @@ export class Mongo extends Service {
         ...(input.volumes || []),
       ],
     });
+    this.user = user;
+    this.password = password;
+    this.database = database;
 
-    this.mongoUrl = `mongodb://${user}:${password}@${name}:27017`;
     new MongoBackup({
       name: `${name}-backup`,
       mongoUrl: this.mongoUrl,

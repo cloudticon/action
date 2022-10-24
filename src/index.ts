@@ -14,6 +14,7 @@ import { context } from "./context";
 import { fetchValues } from "./ctClient";
 import { terraformRepository } from "./terraform/terraformRepository";
 import { sendNotify } from "./sendNotify";
+import { setupKubectl } from "./utils/setupKubectl";
 
 export * from "./components";
 export * from "./Service";
@@ -36,6 +37,7 @@ export const run = async () => {
   await setupBuildx();
   await setupHasuraCli();
   await setupTerraform();
+  await setupKubectl();
 
   const repositoryScore = await terraformRepository();
   const projectBranchScope = await terraformProjectBranchScope();

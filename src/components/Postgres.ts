@@ -15,6 +15,9 @@ export type PostgresInput = Omit<ServiceInput, "image" | "build" | "port"> & {
 };
 export class Postgres extends Service {
   public psqlUrl: string;
+  public user: Input<string>;
+  public password: Input<string>;
+  public database: Input<string>;
 
   constructor({
     user = "postgres",
@@ -50,6 +53,9 @@ export class Postgres extends Service {
     });
 
     this.psqlUrl = `postgres://${user}:${password}@${input.name}:5432/${database}`;
+    this.user = user;
+    this.password = password;
+    this.database = database;
 
     new PostgresBackup({
       name: `${this.name}-backup`,

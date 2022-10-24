@@ -13,7 +13,7 @@ import { getSentry } from "./utils/getSentry";
 import { isMaster } from "./utils/isMaster";
 
 export type ServiceSize = "xs" | "sm" | "md" | "lg" | "xl";
-
+export type ServiceNode = "prod" | "dev";
 export type ServiceBuildInput = {
   context: string;
   dockerfile?: string;
@@ -28,6 +28,7 @@ export type ServiceVolume = {
 
 export type ServiceHealthCheck = {
   path: string;
+  initialDelaySeconds?: number;
 };
 
 export type ServiceResources = {
@@ -37,6 +38,7 @@ export type ServiceResources = {
 export type ServiceInput = {
   name: string;
   command?: Input<string>[];
+  args?: Input<string>[];
   image?: Input<string>;
   build?: boolean | ServiceBuildInput;
   port?: number;
@@ -53,6 +55,7 @@ export type ServiceInput = {
   resources?: ServiceResources;
   devCommand?: Input<string>[];
   size?: ServiceSize;
+  node?: ServiceNode;
 };
 
 const serviceSizes: Record<ServiceSize, ServiceResources> = {
@@ -82,8 +85,8 @@ const serviceSizes: Record<ServiceSize, ServiceResources> = {
       memory: "256Mi",
     },
     limits: {
-      cpu: "250m",
-      memory: "256Mi",
+      cpu: "500m",
+      memory: "512Mi",
     },
   },
   lg: {
@@ -111,6 +114,7 @@ export class Service {
   public customDomain: Input<string>;
   public host: Input<string>;
   public command?: Input<string>[];
+  public args?: Input<string>[];
   public devCommand?: Input<string>[];
   public envs: Record<string, Input<string>>;
   public healthCheck: ServiceHealthCheck;
@@ -122,6 +126,7 @@ export class Service {
   public dockerImage: DockerImage;
   public resources?: ServiceResources;
   public size?: ServiceSize;
+  public node: ServiceNode;
   public deployType: "kubernetes_stateful_set" | "kubernetes_deployment_v1";
 
   get name() {
@@ -148,6 +153,7 @@ export class Service {
     this.customDomain = input.customDomain;
     this.host = input.customDomain ? input.customDomain : this.getDefaultHost();
     this.command = input.command;
+    this.args = input.args;
     this.devCommand = input.devCommand;
     this.envs = input.env || {};
     this.healthCheck = input.checks;
@@ -155,6 +161,7 @@ export class Service {
     this.resources = input.resources || serviceSizes[this.size];
     this.volumes = input.volumes || [];
     this.publicPrefixes = input.publicPrefixes || ["/"];
+    this.node = input.node || isMaster() ? "prod" : "dev";
     if (input.build) {
       const creds = getDockerCreds();
       this.dockerImage = new DockerImage({
@@ -230,7 +237,7 @@ export class Service {
       }
     );
 
-    const nodePools = isMaster() ? ["prod", "prod-auto"] : ["dev", "dev-auto"];
+    const nodePools = [this.node, `${this.node}-auto`];
     const deployArgs: any = {
       metadata: {
         name: this.name,
@@ -276,6 +283,7 @@ export class Service {
               name: this.name,
               image: this.dockerImage.image,
               command: this.command,
+              args: this.args,
               env: Object.entries(this.envs).map(([name, value]) => ({
                 name,
                 value,
@@ -286,6 +294,7 @@ export class Service {
               },
               liveness_probe: this.healthCheck
                 ? {
+                    initial_delay_seconds: this.healthCheck.initialDelaySeconds,
                     http_get: {
                       path: this.healthCheck.path,
                       port: this.port,

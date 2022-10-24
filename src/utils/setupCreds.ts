@@ -18,6 +18,7 @@ export const getDockerCreds = () => {
 
 export const setupCreds = async () => {
   creds = await fetchCreds();
+  process.env.KUBECONFIG = "/tmp/kubeconfig";
   fs.writeFileSync(`/tmp/kubeconfig`, creds.kubeconfig);
   core.exportVariable("KUBE_CONFIG_PATH", "/tmp/kubeconfig");
   core.exportVariable("AWS_ACCESS_KEY_ID", creds.awsAccessKey);

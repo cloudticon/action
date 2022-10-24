@@ -23,6 +23,7 @@ export class Hasura extends Service {
     "/v2",
     "/healthz",
     "/api/rest",
+    "/v1alpha1",
   ];
   public adminSecret: Input<string>;
   public functions?: BackendFunctions;
