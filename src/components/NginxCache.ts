@@ -1,34 +1,48 @@
-import { Container, ContainerInput } from "./";
-import { Input } from "../../../types";
-import { File } from "../resources";
 import * as fs from "fs";
 import * as path from "path";
-import { DockerfileBuilder } from "../../../core/Dockerfile";
 
-export type NginxCacheInput = Omit<ContainerInput, "build" | "image"> &
-  Input<{
-    proxyTo: string;
-    statics?: string[];
-    ttl?: number;
-  }>;
+import { DockerfileBuilder } from "../Dockerfile";
+import { LocalFile } from "../LocalFile";
+import { Service, ServiceInput } from "../Service";
+import { Input } from "../types";
+import { context } from "../context";
 
-export class NginxCache extends Container {
+export type NginxCacheInput = Omit<ServiceInput, "build" | "image"> & {
+  proxyTo: Input<string>;
+  statics?: string[];
+  ttl?: Input<number>;
+};
+
+export class NginxCache extends Service {
   constructor({
     name,
     proxyTo,
     ttl = 31536000,
-    statics = ["jpg", "jpeg", "png", "gif", "ico", "css", "js", "svg", "otf"],
+    statics = [
+      "jpg",
+      "jpeg",
+      "png",
+      "gif",
+      "ico",
+      "css",
+      "js",
+      "svg",
+      "otf",
+      "webp",
+    ],
     ...input
   }: NginxCacheInput) {
-    const context = fs.mkdtempSync("/tmp");
+    const nginxPath = `${context.workingDir}/nginx-${name}`;
+    fs.mkdirSync(nginxPath);
 
     const dockerfile = new DockerfileBuilder()
       .from("nginx:stable")
       .copy("./nginx.conf", "/etc/nginx/nginx.conf")
-      .save(context);
+      .toTf(path.join(nginxPath, "Dockerfile"));
 
-    const config = new File(`${name}-nginx-config`, {
-      path: path.join(context, "nginx.conf"),
+    const config = new LocalFile({
+      name: `${name}-nginx-config`,
+      filename: path.join(nginxPath, "nginx.conf"),
       content: NginxCache.generateConfig(proxyTo, statics, ttl),
     });
 
@@ -36,14 +50,14 @@ export class NginxCache extends Container {
       ...input,
       name,
       port: 80,
-      build: { dockerfile, context, dependsOn: [config] },
+      build: { dockerfile, context: nginxPath, dependsOn: [config.resource] },
     });
   }
 
   private static generateConfig(
-    proxyTo: string,
+    proxyTo: Input<string>,
     statics: string[],
-    ttl: number
+    ttl: Input<number>
   ): string {
     return `
 events {}
@@ -57,7 +71,7 @@ http {
         listen 80;
 
         location / {
-             proxy_pass ${proxyTo};
+             proxy_pass http://${proxyTo};
         }
 
         location ~* \\.(${statics.join("|")})$ {
@@ -76,7 +90,7 @@ http {
             add_header X-Proxy-Cache $upstream_cache_status;
             add_header Cache-Control max-age=${ttl};
 
-            proxy_pass ${proxyTo};
+            proxy_pass http://${proxyTo};
         }
 
       access_log off;

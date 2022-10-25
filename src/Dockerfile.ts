@@ -96,10 +96,10 @@ export class DockerfileBuilder {
     return p;
   }
 
-  toTf() {
+  toTf(path) {
     const resource = new LocalFile({
       name: `dockerfile-${Date.now()}`,
-      filename: `${context.workingDir}/Dockerfile`,
+      filename: path,
       content: heredoc(this.toString()),
     });
 
@@ -224,7 +224,7 @@ export class BuildableJsDockerfileBuilder {
 
   release(builder: JsDockerfileBuilder) {}
 
-  build() {
+  build(path = `${context.workingDir}/Dockerfile`) {
     const base = new JsDockerfileBuilder();
     this.base(base);
 
@@ -258,6 +258,6 @@ export class BuildableJsDockerfileBuilder {
       .appendBuilder(dependencies)
       .appendBuilder(builder)
       .appendBuilder(release)
-      .toTf();
+      .toTf(path);
   }
 }

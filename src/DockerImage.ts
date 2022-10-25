@@ -3,13 +3,13 @@ import { Attribute, map, Provisioner } from "terraform-generator";
 import * as path from "path";
 import { Input } from "./types";
 import { globalTerraform } from "./utils/compileAndRequireCtFile";
-import { context } from "./context";
+import { context as repoContext } from "./context";
 
 export type DockerImageParams = {
   name: string;
   image: Input<string>;
   tag?: string;
-  ctx?: string;
+  context?: string;
   dockerfile?: string;
   build?: boolean;
 };
@@ -21,11 +21,18 @@ export class DockerImage {
   constructor({
     name,
     image,
-    ctx = `${context.workingDir}/.`,
+    context = `${repoContext.workingDir}/.`,
     dockerfile = "Dockerfile",
     build = false,
   }: DockerImageParams) {
+    // TODO: fix that
+    if (context === ".") {
+      context = `${repoContext.workingDir}/.`;
+    }
     this.image = image;
+    console.log("\n\n\n\n\n\n\n\n");
+    console.log(JSON.stringify({ name, image, context }, null, 2));
+    console.log("\n\n\n\n\n\n\n\n");
     this.buildResource = globalTerraform.resource(
       "null_resource",
       `${name}-build`,
@@ -41,7 +48,7 @@ export class DockerImage {
       const scriptPath = path.resolve("scripts/build-and-push-docker-image.sh");
       this.buildResource.setProvisioners([
         new Provisioner("local-exec", {
-          command: `${scriptPath} ${ctx} ${image}`,
+          command: `${scriptPath} ${context} ${image}`,
         }),
       ]);
     }

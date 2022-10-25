@@ -11,6 +11,7 @@ import {
 import { getCtCreds, getDockerCreds } from "./utils/setupCreds";
 import { getSentry } from "./utils/getSentry";
 import { isMaster } from "./utils/isMaster";
+import { NginxCache } from "./components";
 
 export type ServiceSize = "xs" | "sm" | "md" | "lg" | "xl";
 export type ServiceNode = "prod" | "dev";
@@ -56,6 +57,7 @@ export type ServiceInput = {
   devCommand?: Input<string>[];
   size?: ServiceSize;
   node?: ServiceNode;
+  proxyCache?: boolean;
 };
 
 const serviceSizes: Record<ServiceSize, ServiceResources> = {
@@ -128,6 +130,7 @@ export class Service {
   public size?: ServiceSize;
   public node: ServiceNode;
   public deployType: "kubernetes_stateful_set" | "kubernetes_deployment_v1";
+  public proxyCache: boolean;
 
   get name() {
     return this.input.name;
@@ -162,7 +165,12 @@ export class Service {
     this.volumes = input.volumes || [];
     this.publicPrefixes = input.publicPrefixes || ["/"];
     this.node = input.node || isMaster() ? "prod" : "dev";
+    this.proxyCache = input.proxyCache || false;
     if (input.build) {
+      console.log({
+        name: this.name,
+        build: input.build,
+      });
       const creds = getDockerCreds();
       this.dockerImage = new DockerImage({
         name: this.name,
@@ -348,7 +356,18 @@ export class Service {
     //     proxied: true,
     //   });
     // }
+    let ingressHost = this.host;
+    let ingressService = this.name;
+    let ingressPort = this.port;
 
+    if (this.proxyCache) {
+      const nginxCache = new NginxCache({
+        name: `${this.name}-proxy-cache`,
+        proxyTo: this.linkUrl,
+      });
+      ingressService = nginxCache.name;
+      ingressPort = nginxCache.port;
+    }
     this.kubeIngress = globalTerraform.resource(
       "kubernetes_ingress_v1",
       this.name,
@@ -365,20 +384,20 @@ export class Service {
         spec: {
           ingress_class_name: "haproxy",
           tls: {
-            hosts: [this.host],
+            hosts: [ingressHost],
             secret_name: this.customDomain ? this.customDomain : undefined,
           },
           rule: {
-            host: this.host,
+            host: ingressHost,
             http: {
               path: this.publicPrefixes.map((p) => ({
                 path: p,
                 path_type: "Prefix",
                 backend: {
                   service: {
-                    name: this.name,
+                    name: ingressService,
                     port: {
-                      number: this.port,
+                      number: ingressPort,
                     },
                   },
                 },

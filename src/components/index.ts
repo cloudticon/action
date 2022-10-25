@@ -9,3 +9,4 @@ export * from "./Next";
 export * from "./Mongo";
 export * from "./crons";
 export * from "./PrismaDatabase";
+export * from "./NginxCache";
