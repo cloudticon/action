@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2017",
+    "sourceMap": false,
+    "outDir": "lib",
+    "declaration": false,
+    "resolveJsonModule": true,
+    "removeComments": false,
+    "esModuleInterop": true
+  },
+  "exclude": ["node_modules"],
+  "files": ["src/index.ts"]
+}

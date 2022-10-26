@@ -1,0 +1,9 @@
+{
+  "name": "@cloudticon/get-core",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^4.8.4"
+  }
+}

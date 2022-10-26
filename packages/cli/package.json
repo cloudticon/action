@@ -1,0 +1,22 @@
+{
+  "name": "@cloudticon/cli",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build:watch": "tsc --watch"
+  },
+  "dependencies": {
+    "@cloudticon/core": "1.0.0",
+    "chokidar": "^3.5.3",
+    "commander": "^9.4.1",
+    "debug": "^4.3.4",
+    "git-repo-info": "^2.1.1",
+    "gitconfiglocal": "^2.1.0",
+    "node-graceful-shutdown": "^1.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.5",
+    "typescript": "^4.8.4"
+  }
+}

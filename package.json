@@ -1,41 +1,18 @@
 {
   "version": "1.1.23",
-  "main": "lib/index.js",
-  "files": [
-    "lib"
-  ],
   "name": "cloudticon",
-  "types": "lib/index.d.ts",
   "license": "MIT",
-  "_moduleAliases": {
-    "cloudticon": "./dist/index"
-  },
-  "devDependencies": {
-    "@actions/core": "^1.9.1",
-    "@actions/exec": "^1.1.1",
-    "@actions/github": "^5.0.3",
-    "@types/node": "^18.7.18",
-    "@vercel/ncc": "^0.34.0",
-    "prettier": "^2.7.1",
-    "terraform-generator": "^5.2.0",
-    "ts-node": "^10.9.1",
-    "tsconfig-paths": "^4.1.0",
-    "typescript": "^4.8.3"
-  },
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "test": "WK=/home/krs/Projects/payticon/frontend-eshop ts-node src/index.ts && cd /home/krs/Projects/payticon/frontend-eshop  && terraform init && terraform apply -auto-approve",
-    "package": "ncc build src/index.ts -o dist --source-map",
-    "build": "tsc -p tsconfig-declarations.json && touch lib/index.js",
-    "push": "yarn build && yarn version --patch && npm publish",
-    "deploy": "yarn package && cp -r scripts/* dist && git add dist && git commit -m 'up' && git push"
+    "cli": "yarn workspace @cloudticon/cli",
+    "core": "yarn workspace @cloudticon/core",
+    "gha": "yarn workspace @cloudticon/github-action",
+    "get-core": "yarn workspace @cloudticon/get-core"
   },
   "dependencies": {
-    "@actions/cache": "^3.0.4",
-    "@actions/tool-cache": "^2.0.1",
-    "@hashicorp/js-releases": "^1.6.1",
-    "axios": "^0.27.2",
-    "esbuild": "^0.15.7",
-    "module-alias": "^2.2.2",
-    "typescript-require": "^0.3.0"
+    "prettier": "^2.7.1"
   }
 }
