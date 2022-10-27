@@ -19,6 +19,7 @@ export class Mongo extends Service {
   get mongoUrl() {
     return `mongodb://${this.user}:${this.password}@${this.name}:27017/${this.database}?authSource=admin&retryWrites=true&w=majority`;
   }
+
   constructor({
     name,
     version = "6.0.2",
@@ -41,8 +42,6 @@ export class Mongo extends Service {
         MONGO_INITDB_ROOT_PASSWORD: password,
         ...(input.env || {}),
       },
-      command: ["/bin/sh"],
-      args: ["-c", "mongod --replSet=rs0 --bind_ip_all"],
       volumes: [
         {
           name: `${name}-data`,
