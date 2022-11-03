@@ -359,6 +359,7 @@ export class Service {
     let ingressHost = this.host;
     let ingressService = this.name;
     let ingressPort = this.port;
+    let ingressTlsHosts = [`www.${ingressHost}`, ingressHost];
 
     if (this.proxyCache) {
       const nginxCache = new NginxCache({
@@ -378,13 +379,16 @@ export class Service {
           annotations: this.customDomain
             ? map({
                 '"cert-manager.io/cluster-issuer"': "letsencrypt-prod",
+                '"haproxy-ingress.github.io/redirect-from"': `www.${ingressHost}`,
               })
-            : map({}),
+            : map({
+                '"haproxy-ingress.github.io/redirect-from"': `www.${ingressHost}`,
+              }),
         },
         spec: {
           ingress_class_name: "haproxy",
           tls: {
-            hosts: [ingressHost],
+            hosts: ingressTlsHosts,
             secret_name: this.customDomain ? this.customDomain : undefined,
           },
           rule: {
