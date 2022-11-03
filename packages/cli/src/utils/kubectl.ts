@@ -1,32 +1,32 @@
-import { spawn } from 'child_process';
-import createDebug from 'debug';
+import { spawn } from "child_process";
+import createDebug from "debug";
 
-const debug = createDebug('kubectl');
+const debug = createDebug("kubectl");
 export const kubectlStream = (args: string[], options = {}) => {
-  debug(`kubectl ${args.join(' ')}`);
+  debug(`kubectl ${args.join(" ")}`);
   return spawn(`kubectl`, args, {
     env: {
+      KUBECONFIG: "/home/krs/.kube/ct-waw",
       ...process.env,
-      KUBECONFIG: '/home/krs/.kube/ct-waw',
     },
     ...options,
   });
 };
 export const kubectl = (args: string[]) => {
   const cmd = kubectlStream(args);
-  let stdoutBuffer = '';
-  let stderrBuffer = '';
+  let stdoutBuffer = "";
+  let stderrBuffer = "";
 
-  cmd.stdout.on('data', data => {
+  cmd.stdout.on("data", (data) => {
     stdoutBuffer += data;
   });
 
-  cmd.stderr.on('data', data => {
+  cmd.stderr.on("data", (data) => {
     stderrBuffer += data;
   });
 
   return new Promise<string>((resolve, reject) => {
-    cmd.on('close', code => {
+    cmd.on("close", (code) => {
       if (code !== 0) {
         reject(new Error(stderrBuffer));
       } else {

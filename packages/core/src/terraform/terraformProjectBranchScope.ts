@@ -5,7 +5,7 @@ import { Terraform } from "./Terraform";
 import { getNamespace } from "../utils/getNamespace";
 
 export const terraformProjectBranchScope = () => {
-  const dir = `/tmp/.ct/project-branch`;
+  const dir = `${context.ctDir}/project-branch`;
   const dockerCreds = getDockerCreds();
 
   const tf = new Terraform(`${context.project}-${context.branch}`, dir, {

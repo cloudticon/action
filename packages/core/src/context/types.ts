@@ -12,4 +12,5 @@ export type RepositoryContext = {
   cmd: string;
   ctToken: string;
   logger: Logger;
+  ctDir: string;
 };

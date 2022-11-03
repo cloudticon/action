@@ -4,7 +4,7 @@ import { context } from "../context";
 import { getCtCreds } from "../utils/setupCreds";
 
 export const terraformRepositoryBranchScope = () => {
-  const dir = `/tmp/.ct/repository-branch`;
+  const dir = `${context.ctDir}/repository-branch`;
   const tf = new Terraform(
     `${context.project}-${context.repository}-${context.branch}`,
     dir,

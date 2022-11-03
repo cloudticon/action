@@ -14,4 +14,5 @@ export const context: RepositoryContext = {
   repository: "backend",
   workingDir: process.cwd(),
   logger: localLogger,
+  ctDir: `${process.cwd()}/.ct`,
 };

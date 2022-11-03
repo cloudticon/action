@@ -4,7 +4,7 @@ import { context } from "../context";
 import { Terraform } from "./Terraform";
 
 export const terraformRepository = () => {
-  const dir = `/tmp/.ct/repository`;
+  const dir = `${context.ctDir}/repository`;
   const creds = getCtCreds().sentry;
 
   const tf = new Terraform(`${context.project}-${context.repository}`, dir, {

@@ -7,6 +7,7 @@ import { terraformRepositoryBranchScope } from "./terraform/terraformRepositoryB
 import { context } from "./context";
 import { fetchValues } from "./ctClient";
 import { terraformRepository } from "./terraform/terraformRepository";
+import * as fs from "fs";
 
 export * from "./components";
 export * from "./components/Service";
@@ -22,6 +23,9 @@ export * from "./utils/isMaster";
 addAlias("cloudticon", __dirname + "/index.js");
 
 export const deploy = async () => {
+  if (!fs.existsSync(context.ctDir)) {
+    fs.mkdirSync(context.ctDir);
+  }
   const { cmd } = context;
   const values = await fetchValues();
 
