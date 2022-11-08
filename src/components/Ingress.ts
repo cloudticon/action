@@ -3,12 +3,15 @@ import { globalTerraform } from "../utils/compileAndRequireCtFile";
 import { getNamespace } from "../utils/getNamespace";
 import { map } from "terraform-generator";
 
-export type RouteInput = {
+export type IngressInput = {
   name: string;
-  redirectForm?: Input<string>;
-  tlsHosts: Input<string>[];
+  annotations?: Record<string, Input<string>>;
+  tls?: {
+    hosts: Input<string>[];
+    secretName?: Input<string>;
+  };
   rules: {
-    host: string;
+    host: Input<string>;
     paths: {
       path: Input<string>;
       backend: {
@@ -20,33 +23,33 @@ export type RouteInput = {
     }[];
   }[];
 };
-export class Route {
-  constructor({ name, rules, redirectForm, tlsHosts }: RouteInput) {
+export class Ingress {
+  constructor({ name, rules, annotations = {}, tls }: IngressInput) {
     globalTerraform.resource("kubernetes_ingress_v1", name, {
       metadata: {
         name: name,
         namespace: getNamespace(),
-        annotations: map({
-          '"cert-manager.io/cluster-issuer"': "letsencrypt-prod",
-          ...(redirectForm
-            ? {
-                '"haproxy-ingress.github.io/redirect-from"': redirectForm,
-              }
-            : {}),
-        }),
+        annotations: map(annotations),
       },
       spec: {
         ingress_class_name: "haproxy",
-        tls: {
-          hosts: tlsHosts,
-          secret_name: `${name}_tls`,
-        },
-        rule: rules.map((rule) => ({
+        tls: tls
+          ? {
+              hosts: tls.hosts,
+              secret_name: tls.secretName,
+            }
+          : undefined,
+        rule: rules.map(({ paths, ...rule }) => ({
           ...rule,
-          path: rule.paths.map((path) => ({
-            ...path,
-            path_type: "Prefix",
-          })),
+          http: {
+            path: paths.map(({ path, backend }) => ({
+              path,
+              path_type: "Prefix",
+              backend: {
+                service: backend,
+              },
+            })),
+          },
         })),
       },
     });

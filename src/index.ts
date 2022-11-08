@@ -102,4 +102,5 @@ const getCmd = (): TerraformCmd => {
   }
   return "apply";
 };
+
 run().then();
