@@ -127,11 +127,11 @@ class Service {
             "yarn start",
           ],
         },
-        {
-          op: "replace",
-          path: "/spec/template/spec/affinity/nodeAffinity/requiredDuringSchedulingIgnoredDuringExecution/nodeSelectorTerms/0/matchExpressions/0/values",
-          value: ["prod-auto", "prod"],
-        },
+        // {
+        //   op: "replace",
+        //   path: "/spec/template/spec/affinity/nodeAffinity/requiredDuringSchedulingIgnoredDuringExecution/nodeSelectorTerms/0/matchExpressions/0/values",
+        //   value: ["prod-auto", "prod"],
+        // },
         // {
         //   op: "remove",
         //   path: "/spec/template/spec/containers/0/livenessProbe",
