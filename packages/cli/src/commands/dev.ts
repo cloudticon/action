@@ -1,9 +1,9 @@
 import { program } from "commander";
-import { getGitInfo } from "./utils/gitInfo";
-import { getService } from "./utils/getService";
+import { getGitInfo } from "../utils/gitInfo";
+import { getService } from "../utils/getService";
 import { watch } from "chokidar";
 import { resolve } from "path";
-import { kubectlStream } from "./utils/kubectl";
+import { kubectlStream } from "../utils/kubectl";
 import { onShutdown } from "node-graceful-shutdown";
 import createDebug from "debug";
 import * as fs from "fs";
