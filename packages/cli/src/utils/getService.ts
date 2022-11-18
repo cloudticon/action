@@ -1,16 +1,17 @@
-import { ChildProcessWithoutNullStreams } from "child_process";
 import fs from "fs";
 import createDebug from "debug";
 import path from "path";
-import { getKubeDeploy } from "../kube/getKubeDeploy";
-import { isKubeDeployReady } from "../kube/isKubeDeployReady";
+import {
+  execKubePod,
+  ExecKubeProcess,
+  getKubeDeploy,
+  getKubeDeployPods,
+  logsKubePod,
+  waitKubeDeployReady,
+} from "../kube";
 import { V1Deployment, V1Pod } from "@kubernetes/client-node";
-import { logsKubePod, getKubePods } from "../kube";
-import { PassThrough, Stream } from "stream";
+import { PassThrough } from "stream";
 import { patchKubeDeploy } from "../kube/patchKubeDeploy";
-import { execKubePod, ExecKubeProcess } from "../kube/execKubePod";
-import { waitKubeDeployReady } from "../kube/waitKubeDeployReady";
-import { getKubeDeployPods } from "../kube/getKubeDeployPods";
 
 const debug = createDebug("service");
 
