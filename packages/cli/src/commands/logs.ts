@@ -1,25 +1,13 @@
 import { program } from "commander";
-import { getGitInfo } from "../utils/gitInfo";
-import { getKubePods } from "../kube/getKubePods";
 import { getContext } from "../utils/getContext";
-import { getKubePodLogsStream } from "../kube/getKubePodLogsStream";
+import { getService } from "../utils/getService";
+
 program
   .command("logs")
   .option("--api-url <apiUrl>", "", "https://builder.cloudticon.com")
-  .option("--service <service>", "")
-  .action(getLogs);
-
-type GetLogsParams = {
-  service: string;
-};
-export async function getLogs({ service }: GetLogsParams) {
-  const { namespace } = await getContext();
-  const pods = await getKubePods({ namespace });
-
-  await getKubePodLogsStream({
-    namespace,
-    pod: pods[0].metadata.name,
-    container: pods[0].spec.containers[0].name,
+  .option("--service <name>", "")
+  .action(async ({ name }) => {
+    const { namespace } = await getContext();
+    const service = await getService(name, namespace);
+    await service.logs();
   });
-  console.log(pods);
-}

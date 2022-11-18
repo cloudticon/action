@@ -1,2 +1,2 @@
 export * from "./getKubePods";
-export * from "./getKubePodLogsStream";
+export * from "./logsKubePod";

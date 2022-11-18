@@ -4,17 +4,20 @@ import createDebug from "debug";
 import path from "path";
 import { getKubeDeploy } from "../kube/getKubeDeploy";
 import { isKubeDeployReady } from "../kube/isKubeDeployReady";
-import { V1Deployment } from "@kubernetes/client-node";
-import { getKubePodLogsStream, getKubePods } from "../kube";
-import { Stream } from "stream";
+import { V1Deployment, V1Pod } from "@kubernetes/client-node";
+import { logsKubePod, getKubePods } from "../kube";
+import { PassThrough, Stream } from "stream";
 import { patchKubeDeploy } from "../kube/patchKubeDeploy";
+import { execKubePod, ExecKubeProcess } from "../kube/execKubePod";
+import { waitKubeDeployReady } from "../kube/waitKubeDeployReady";
+import { getKubeDeployPods } from "../kube/getKubeDeployPods";
 
 const debug = createDebug("service");
 
 class Service {
   private deploy: V1Deployment;
-  private process: Stream;
-  private devProcess: Stream;
+  private devProcess: ExecKubeProcess;
+  private logsStream: PassThrough;
 
   constructor(public name: string, public namespace: string) {}
 
@@ -33,52 +36,46 @@ class Service {
   }
 
   async logs() {
-    this.stopProcess();
     const { name, container } = await this.getPodNameAndContainer();
-    await getKubePodLogsStream({
+    const stream = await logsKubePod({
       namespace: this.namespace,
       pod: name,
       container,
     });
+    stream.pipe(process.stdout);
+    this.logsStream = stream;
   }
 
-  shell() {
-    this.stopProcess();
-    // kubectlStream(
-    //   ["exec", "-it", `deploy/${this.name}`, "-n", this.namespace, "--", "ash"],
-    //   {
-    //     cwd: process.cwd(),
-    //     detached: true,
-    //     stdio: "inherit",
-    //   }
-    // );
-    // this.process.stdout.pipe(process.stdout);
-    // this.process.stderr.pipe(process.stderr);
-    // process.stdin.pipe(this.process.stdin);
-  }
-
-  stopProcess() {
-    if (this.process) {
-      // this.process.stdout.destroy();
-      // this.process.stderr.destroy();
-      // this.process.stdin.destroy();
-      // this.process.kill("SIGINT");
+  stopLogs() {
+    if (this.logsStream) {
+      this.logsStream.destroy();
+      this.logsStream = undefined;
     }
   }
 
   async getPodNameAndContainer() {
-    const pods = await getKubePods({ namespace: this.namespace });
-    const pod = pods.find((p) => p.metadata.name.startsWith(this.name));
+    const pods = await getKubeDeployPods({
+      namespace: this.namespace,
+      name: this.name,
+    });
+    let latest: V1Pod;
+    for (let pod of pods) {
+      if (
+        !latest ||
+        new Date(latest.status.startTime).getTime() <
+          new Date(pod.status.startTime).getTime()
+      ) {
+        latest = pod;
+      }
+    }
     return {
-      name: pod.metadata.name,
-      container: pod.spec.containers[0].name,
+      name: latest.metadata.name,
+      container: latest.spec.containers[0].name,
     };
   }
 
   async devMode(outDir: string) {
-    // await this.devModeOff();
     if (!this.isDevMode) {
-      this.stopProcess();
       console.log("turning on dev mode....");
       await patchKubeDeploy({
         namespace: this.namespace,
@@ -89,84 +86,80 @@ class Service {
             path: "/metadata/annotations/ct-dev-mode",
             value: "true",
           },
+          {
+            op: "add",
+            path: "/metadata/annotations/ct-dev-snapshot",
+            value: JSON.stringify(this.deploy.spec),
+          },
+          {
+            op: "replace",
+            path: "/spec/replicas",
+            value: 1,
+          },
+          {
+            op: "replace",
+            path: "/spec/template/spec/containers/0/command",
+            value: [
+              "npx",
+              "nodemon",
+              "--verbose",
+              "--watch",
+              `/app/${outDir}/**`,
+              "--ext",
+              "js",
+              "--delay",
+              "0.5",
+              "--exec",
+              "yarn start",
+            ],
+          },
+          {
+            op: "replace",
+            path: "/spec/template/spec/affinity/nodeAffinity/requiredDuringSchedulingIgnoredDuringExecution/nodeSelectorTerms/0/matchExpressions/0/values",
+            value: ["prod-auto", "prod"],
+          },
           // {
-          //   op: "add",
-          //   path: "/metadata/annotations/ct-dev-snapshot",
-          //   value: JSON.stringify(this.deploy.spec),
+          //   op: "remove",
+          //   path: "/spec/template/spec/containers/0/livenessProbe",
           // },
           // {
-          //   op: "replace",
-          //   path: "/spec/replicas",
-          //   value: 1,
+          //   op: "remove",
+          //   path: "/spec/template/spec/containers/0/readinessProbe",
           // },
-          // {
-          //   op: "replace",
-          //   path: "/spec/template/spec/containers/0/command",
-          //   value: [
-          //     "npx",
-          //     "nodemon",
-          //     "--verbose",
-          //     "--watch",
-          //     `/app/${outDir}/**`,
-          //     "--ext",
-          //     "js",
-          //     "--delay",
-          //     "0.5",
-          //     "--exec",
-          //     "yarn start",
-          //   ],
-          // },
-          // {
-          //   op: "replace",
-          //   path: "/spec/template/spec/affinity/nodeAffinity/requiredDuringSchedulingIgnoredDuringExecution/nodeSelectorTerms/0/matchExpressions/0/values",
-          //   value: ["prod-auto", "prod"],
-          // },
-          // // {
-          // //   op: "remove",
-          // //   path: "/spec/template/spec/containers/0/livenessProbe",
-          // // },
-          // // {
-          // //   op: "remove",
-          // //   path: "/spec/template/spec/containers/0/readinessProbe",
-          // // },
         ],
       });
-      await waitForDeployAvailable(this.name, this.namespace);
+      await waitKubeDeployReady({ name: this.name, namespace: this.namespace });
       await this.refresh();
-      await new Promise((resolve) => setTimeout(resolve, 4000));
-      this.startDevProcess();
+      await this.startDevProcess();
     }
     console.log("dev mode on");
   }
 
-  startDevProcess() {
+  async startDevProcess() {
     if (this.hasDevProcess) {
       return;
     }
-    //
-    // this.devProcess = kubectlStream([
-    //   "exec",
-    //   "-i",
-    //   `deploy/${this.name}`,
-    //   "-n",
-    //   this.namespace,
-    //   "--",
-    //   "ash",
-    // ]);
-    // this.devProcess.stdout.on("data", (data) => {
-    //   debug(data.toString());
-    // });
-    // this.devProcess.stderr.on("data", (data) => {
-    //   debug("stderr: " + data.toString());
-    // });
-    // this.devProcess.on("close", (code) => {
-    //   console.log("dev process closed", code);
-    //   this.devProcess = null;
-    //   if (code === 137) {
-    //     console.log("dev reconnect");
-    //     this.startDevProcess();
-    //   }
-    // });
+    const { name, container } = await this.getPodNameAndContainer();
+    this.devProcess = await execKubePod({
+      namespace: this.namespace,
+      name,
+      container,
+      command: "ash",
+    });
+    this.devProcess.stdout.on("data", (data) => {
+      debug(data.toString());
+    });
+    this.devProcess.stderr.on("data", (data) => {
+      debug("stderr: " + data.toString());
+    });
+    this.devProcess.on("close", (code) => {
+      console.log("dev process closed", JSON.stringify(code, null, 2));
+      this.devProcess = null;
+      if (code === 137) {
+        console.log("dev reconnect");
+        this.startDevProcess();
+      }
+    });
   }
   copyFile(src: string, dist: string) {
     if (this.isDevMode) {
@@ -184,30 +177,34 @@ class Service {
 
   runDevCmd(cmd: string) {
     debug(`dev: ${cmd}`);
-    // this.devProcess.stdin.write(`${cmd}\n`);
+    this.devProcess.stdin.write(`${cmd}\n`);
   }
   async devModeOff() {
-    //   if (this.isDevMode) {
-    //     console.log("turn off dev mode...");
-    //     this.stopProcess();
-    //     if (this.devProcess) {
-    //       this.devProcess.stdout.destroy();
-    //       this.devProcess.stderr.destroy();
-    //       this.devProcess.stdin.destroy();
-    //       this.devProcess.kill("SIGINT");
-    //     }
-    //     const snapshot = JSON.parse(
-    //       this.deploy.metadata.annotations["ct-dev-snapshot"]
-    //     );
-    //     await patchDeploy(this.name, this.namespace, [
-    //       { op: "remove", path: "/metadata/annotations/ct-dev-mode" },
-    //       { op: "remove", path: "/metadata/annotations/ct-dev-snapshot" },
-    //       { op: "replace", path: "/spec", value: snapshot },
-    //     ]);
-    //     await waitForDeployAvailable(this.name, this.namespace);
-    //     await this.refresh();
-    //   }
-    //   console.log("dev mode off");
+    if (this.isDevMode) {
+      console.log("turn off dev mode...");
+      if (this.devProcess) {
+        this.devProcess.close();
+        // this.devProcess.stdout.destroy();
+        // this.devProcess.stderr.destroy();
+        // this.devProcess.stdin.destroy();
+        // this.devProcess.kill("SIGINT");
+      }
+      const snapshot = JSON.parse(
+        this.deploy.metadata.annotations["ct-dev-snapshot"]
+      );
+      await patchKubeDeploy({
+        name: this.name,
+        namespace: this.namespace,
+        body: [
+          { op: "remove", path: "/metadata/annotations/ct-dev-mode" },
+          { op: "remove", path: "/metadata/annotations/ct-dev-snapshot" },
+          { op: "replace", path: "/spec", value: snapshot },
+        ],
+      });
+      await waitKubeDeployReady({ name: this.name, namespace: this.namespace });
+      await this.refresh();
+    }
+    console.log("dev mode off");
   }
 }
 
@@ -215,23 +212,4 @@ export const getService = async (name: string, namespace: string) => {
   const service = new Service(name, namespace);
   await service.refresh();
   return service;
-};
-
-export const waitForDeployAvailable = async (
-  name: string,
-  namespace: string
-) => {
-  const check = async (done: () => any) => {
-    const deploy = await getKubeDeploy({ name, namespace });
-    if (isKubeDeployReady(deploy)) {
-      done();
-    } else {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return check(done);
-    }
-  };
-
-  return new Promise<void>(async (resolve, reject) => {
-    await check(resolve);
-  });
 };

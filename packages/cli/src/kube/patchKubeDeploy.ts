@@ -12,11 +12,9 @@ export const patchKubeDeploy = async ({
   name,
   body,
 }: PatchKubeDeploy) => {
-  const { client } = await initKubeClient();
-  kubeDebug("patch deployment", namespace, name, body);
-  // console.log(body);
-  // process.exit();
-  await client.patchNamespacedDeployment(
+  const { apps } = await initKubeClient();
+  kubeDebug("patch deployment", namespace, name);
+  await apps.patchNamespacedDeployment(
     name,
     namespace,
     body,
@@ -27,7 +25,7 @@ export const patchKubeDeploy = async ({
     undefined,
     {
       headers: {
-        "content-type": "application/merge-patch+json",
+        "content-type": "application/json-patch+json",
       },
     }
   );
