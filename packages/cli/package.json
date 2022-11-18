@@ -1,13 +1,19 @@
 {
   "name": "@cloudticon/cli",
-  "version": "1.0.0",
-  "main": "index.js",
+  "version": "0.0.2",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "bin": {
+    "ct": "lib/index.js"
+  },
+  "files": [
+    "lib"
+  ],
   "license": "MIT",
   "scripts": {
     "build:watch": "tsc --watch"
   },
   "dependencies": {
-    "@cloudticon/core": "1.0.0",
     "@kubernetes/client-node": "^0.17.1",
     "chokidar": "^3.5.3",
     "commander": "^9.4.1",
