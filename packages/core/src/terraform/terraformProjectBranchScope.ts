@@ -3,6 +3,7 @@ import { getDockerCreds } from "../utils/setupCreds";
 import { context } from "../context";
 import { Terraform } from "./Terraform";
 import { getNamespace } from "../utils/getNamespace";
+import { resource } from "../tfResource";
 
 export const terraformProjectBranchScope = () => {
   const dir = `${context.ctDir}/project-branch`;
@@ -20,7 +21,7 @@ export const terraformProjectBranchScope = () => {
 
   tf.provider("kubernetes", {});
 
-  const namespace = tf.resource("kubernetes_namespace_v1", "default", {
+  const namespace = resource(tf, "kubernetes_namespace_v1", "default", {
     metadata: {
       name: getNamespace(),
     },

@@ -143,6 +143,6 @@ export class Hasura extends Service {
       },
       dependsOn: [waitForHealth.resource],
     });
-    return super.toTf();
+    // return super.toTf();
   }
 }

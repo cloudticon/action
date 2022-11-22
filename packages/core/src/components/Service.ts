@@ -2,7 +2,6 @@ import { list, map } from "terraform-generator";
 import { context } from "../context";
 import { DockerImage } from "../DockerImage";
 import { Input } from "../types";
-import { Resource } from "terraform-generator/dist/blocks";
 import { getNamespace } from "../utils/getNamespace";
 import {
   registerGlobalService,
@@ -12,6 +11,8 @@ import { getCtCreds, getDockerCreds } from "../utils/setupCreds";
 import { getSentry } from "../utils/getSentry";
 import { isMaster } from "../utils/isMaster";
 import { NginxCache } from "./index";
+import { resource, TfResource } from "../tfResource";
+import { Resource } from "terraform-generator";
 
 export type ServiceSize = "xs" | "sm" | "md" | "lg" | "xl";
 export type ServiceNode = "prod" | "dev";
@@ -121,9 +122,9 @@ export class Service {
   public envs: Record<string, Input<string>>;
   public healthCheck: ServiceHealthCheck;
   public volumes: ServiceVolume[];
-  public kubeService: Resource;
-  public kubeDeployment: Resource;
-  public kubeIngress: Resource;
+  public kubeService: TfResource;
+  public kubeDeployment: TfResource;
+  public kubeIngress: TfResource;
   public publicPrefixes: string[];
   public dockerImage: DockerImage;
   public resources?: ServiceResources;
@@ -188,40 +189,14 @@ export class Service {
       ? "kubernetes_stateful_set"
       : "kubernetes_deployment_v1";
 
-    this.kubeService = new Resource("kubernetes_service", this.name);
-    this.kubeDeployment = new Resource(this.deployType, this.name);
-    this.kubeIngress = new Resource("kubernetes_ingress_v1", this.name);
-
     const sentry = getSentry();
     if (sentry) {
       this.env("SENTRY_DSN", sentry.dns);
       this.env("SENTRY_NAME", this.name);
       this.env("SENTRY_ENVIRONMENT", context.branch);
     }
-    registerGlobalService(this);
-  }
-
-  env(name: string, value: Input<string>) {
-    this.envs[name] = value;
-    return this;
-  }
-
-  check(path: string) {
-    this.healthCheck = { path };
-    return this;
-  }
-
-  link(service: Service) {
-    return this;
-  }
-
-  getDefaultHost() {
-    const creds = getCtCreds();
-    return `${context.project}-${context.repository}-${context.branch}.${creds.baseDomain}`;
-  }
-
-  toTf() {
-    this.kubeService = globalTerraform.resource(
+    this.kubeService = resource(
+      globalTerraform,
       "kubernetes_service",
       this.name,
       {
@@ -315,6 +290,7 @@ export class Service {
       },
       depends_on: [this.dockerImage.buildResource],
     };
+
     if (this.volumes.length) {
       deployArgs.spec.service_name = this.name;
       deployArgs.spec.template.spec.container.volume_mount = this.volumes.map(
@@ -338,7 +314,8 @@ export class Service {
         },
       }));
     }
-    this.kubeDeployment = globalTerraform.resource(
+    this.kubeDeployment = resource(
+      globalTerraform,
       this.deployType,
       this.name,
       deployArgs
@@ -368,7 +345,8 @@ export class Service {
       ingressService = nginxCache.name;
       ingressPort = nginxCache.port;
     }
-    this.kubeIngress = globalTerraform.resource(
+    this.kubeIngress = resource(
+      globalTerraform,
       "kubernetes_ingress_v1",
       this.name,
       {
@@ -407,41 +385,25 @@ export class Service {
         },
       }
     );
+    // registerGlobalService(this);
+  }
 
-    // globalTerraform.resource(
-    //   "kubernetes_manifest",
-    //   `${this.name}_virtual_service`,
-    //   {
-    //     manifest: map({
-    //       apiVersion: "networking.istio.io/v1alpha3",
-    //       kind: "VirtualService",
-    //       metadata: map({
-    //         name: this.name,
-    //         namespace: getNamespace(),
-    //       }),
-    //       spec: map({
-    //         gateways: ["knative-serving/knative-ingress-gateway"],
-    //         hosts: [this.host],
-    //         http: list({
-    //           match: list(
-    //             ...this.publicPrefixes.map((p) => ({
-    //               uri: map({
-    //                 prefix: p,
-    //               }),
-    //             }))
-    //           ),
-    //           route: list({
-    //             destination: map({
-    //               host: this.name,
-    //               port: map({
-    //                 number: this.port,
-    //               }),
-    //             }),
-    //           }),
-    //         }),
-    //       }),
-    //     }),
-    //   }
-    // );
+  env(name: string, value: Input<string>) {
+    this.kubeDeployment.set("spec.");
+    return this;
+  }
+
+  check(path: string) {
+    this.healthCheck = { path };
+    return this;
+  }
+
+  link(service: Service) {
+    return this;
+  }
+
+  getDefaultHost() {
+    const creds = getCtCreds();
+    return `${context.project}-${context.repository}-${context.branch}.${creds.baseDomain}`;
   }
 }

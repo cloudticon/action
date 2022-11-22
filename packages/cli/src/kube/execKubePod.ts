@@ -46,8 +46,11 @@ export const execKubePod = async ({
       subProcess.stdout as Writable,
       subProcess.stderr as Writable,
       subProcess.stdin as any as Readable,
-      true,
-      (status: V1Status) => subProcess.emit("close", status)
+      false,
+      (status: V1Status) => {
+        throw new Error("dev process closed");
+        return subProcess.emit("close", status);
+      }
     )
     .then((ws) => (subProcess.ws = ws));
   return subProcess as ExecKubeProcess;

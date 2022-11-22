@@ -22,6 +22,25 @@ export * from "./utils/isMaster";
 
 addAlias("cloudticon", __dirname + "/index.js");
 
+export const dumpTf = async (out: string) => {
+  if (!fs.existsSync(context.ctDir)) {
+    fs.mkdirSync(context.ctDir);
+  }
+  const { cmd } = context;
+  const values = await fetchValues();
+
+  await setupCreds();
+
+  const repositoryBranchScope = await terraformRepositoryBranchScope();
+  repositoryBranchScope.setVariables(values);
+  const { services, outputs } = await compileAndRequireCtFile(
+    repositoryBranchScope
+  );
+  repositoryBranchScope.setOutput(outputs);
+  repositoryBranchScope.setServices(services);
+  return repositoryBranchScope.orignalWrite({ format: true, dir: out });
+};
+
 export const deploy = async () => {
   if (!fs.existsSync(context.ctDir)) {
     fs.mkdirSync(context.ctDir);

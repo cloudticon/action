@@ -2,13 +2,14 @@ import { map, Provisioner } from "terraform-generator";
 import { Input } from "../types";
 import { Resource } from "terraform-generator/dist/blocks";
 import { globalTerraform } from "../utils/compileAndRequireCtFile";
+import { TfResource } from "../tfResource";
 
 export type LocalExecInput = {
   name: string;
   command: string;
   workingDir?: string;
   environment?: Record<string, Input<string>>;
-  dependsOn?: Resource[];
+  dependsOn?: any[];
 };
 export class LocalExec {
   public resource: Resource;

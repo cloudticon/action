@@ -3,8 +3,7 @@ import { Input } from "../types";
 import { Terraform } from "../terraform/Terraform";
 import { Service } from "../components/Service";
 import { DockerImage } from "../DockerImage";
-import * as io from "@actions/io";
-import { context } from "../context";
+import { context } from "../context/index";
 
 export let globalTerraform: Terraform;
 export let services: Service[];

@@ -6,6 +6,7 @@ import { Service } from "../components/Service";
 import * as fs from "fs";
 import { context } from "../context";
 import { ExecOptions } from "@actions/exec";
+import { WriteOptions } from "terraform-generator/dist/TerraformGenerator";
 const { logger } = context;
 export type TerraformCmd = "apply" | "destroy" | "plan";
 
@@ -67,6 +68,9 @@ export class Terraform extends TerraformGenerator {
     logger.debug(fs.readFileSync(`${this.dir}/terraform.tf`, "utf8"));
   }
 
+  public orignalWrite(options?: WriteOptions) {
+    return super.write(options);
+  }
   public getMetadataPath() {
     return [`${this.dir}/.terraform`, `${this.dir}/.terraform.lock.hcl`];
   }
@@ -110,7 +114,7 @@ export class Terraform extends TerraformGenerator {
 
   public setServices(services: Service[]) {
     for (let service of services) {
-      service.toTf();
+      // service.toTf();
     }
   }
 
