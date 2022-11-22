@@ -2,8 +2,10 @@ import { Service, ServiceInput } from "../Service";
 import { DotEnv } from "../DotEnv";
 import { BuildableJsDockerfileBuilder } from "../Dockerfile";
 import { isDockerFileExist } from "../utils/isDockerFileExist";
+import { LocalFile } from "../LocalFile";
+import { context } from "../context";
 
-export type ReactInput = ServiceInput & {
+export type AstroInput = ServiceInput & {
   name: string;
   size?: any;
   buildEnvExtends?: string[];
@@ -14,7 +16,7 @@ export type ReactInput = ServiceInput & {
   enableSentry?: boolean;
 };
 
-export class React extends Service {
+export class Astro extends Service {
   public dotEnv?: DotEnv;
   public service: Service;
   public sentry?: any;
@@ -27,7 +29,8 @@ export class React extends Service {
       release(builder) {
         builder
           .from("registry.cloudticon.com/cloudticon/nginx:latest")
-          .copy("/app/build", "/usr/share/nginx/html", "builder")
+          .copy("/app/dist", "/usr/share/nginx/html", "builder")
+          .copy("./nginx.conf", "/etc/nginx/nginx.conf")
           .cmd(`nginx -g "daemon off;"`);
       }
     })().build();
@@ -38,11 +41,10 @@ export class React extends Service {
     size = "sm",
     buildEnv,
     buildEnvExtends = [],
-    dockerfile = isDockerFileExist() ? "Dockerfile" : React.createDockerFile(),
-    context = ".",
+    dockerfile = isDockerFileExist() ? "Dockerfile" : Astro.createDockerFile(),
     enableSentry = true,
     ...input
-  }: ReactInput) {
+  }: AstroInput) {
     let dotEnv: DotEnv;
     if (buildEnv) {
       dotEnv = new DotEnv({
@@ -52,14 +54,48 @@ export class React extends Service {
       });
     }
 
+    const config = new LocalFile({
+      filename: `${context.workingDir}/nginx.conf`,
+      name: `${name}-config`,
+      content: `
+server {
+  listen 80;
+  gzip on;
+  gzip_types      text/plain application/xml;
+  gzip_proxied    no-cache no-store private expired auth;
+  gzip_min_length 1000;
+  location /assets {
+    access_log off;
+    expires 30d;
+    add_header Cache-Control public;
+
+    ## No need to bleed constant updates. Send the all shebang in one
+    ## fell swoop.
+    tcp_nodelay off;
+
+    ## Set the OS file cache.
+    open_file_cache max=3000 inactive=120s;
+    open_file_cache_valid 45s;
+    open_file_cache_min_uses 2;
+    open_file_cache_errors off;
+  }
+  location / {
+    root /usr/share/nginx/html;
+    index index.html index.htm;
+    try_files $uri $uri/ /index.html =404;
+  }
+}`,
+    });
     super({
       name,
       port: 80,
       isDefaultService: true,
       build: {
         dockerfile,
-        context,
-        dependsOn: dotEnv ? [dotEnv.resource] : [],
+        context: ".",
+        dependsOn: dotEnv
+          ? [dotEnv.resource, config.resource]
+          : [config.resource],
       },
       ...input,
     });
@@ -67,13 +103,3 @@ export class React extends Service {
     this.dotEnv = dotEnv;
   }
 }
-
-const nginxConfig = `
-server {
-  listen 80;
-  location / {
-    root /usr/share/nginx/html;
-    index index.html index.htm;
-    try_files $uri $uri/ /index.html =404;
-  }
-}`;

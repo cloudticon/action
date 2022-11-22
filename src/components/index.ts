@@ -12,3 +12,4 @@ export * from "./PrismaDatabase";
 export * from "./NginxCache";
 export * from "./Ingress";
 export * from "./Route";
+export * from "./Astro";
