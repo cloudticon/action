@@ -1,6 +1,10 @@
 import { Service, ServiceInput } from "../Service";
 import { DotEnv } from "../DotEnv";
-import { BuildableJsDockerfileBuilder } from "../Dockerfile";
+import {
+  BuildableJsDockerfileBuilder,
+  DockerfileBuilder,
+  JsDockerfileBuilder,
+} from "../Dockerfile";
 import { isDockerFileExist } from "../utils/isDockerFileExist";
 import { LocalFile } from "../LocalFile";
 import { context } from "../context";
@@ -22,18 +26,23 @@ export class Astro extends Service {
   public sentry?: any;
 
   public static createDockerFile() {
-    return new (class extends BuildableJsDockerfileBuilder {
-      beforeBuild(builder) {
-        builder.run("mkdir -p /app/public");
-      }
-      release(builder) {
-        builder
-          .from("registry.cloudticon.com/cloudticon/nginx:latest")
+    return new DockerfileBuilder()
+      .appendBuilder(
+        new JsDockerfileBuilder()
+          .from("node:16-alpine", "builder")
+          .workdir("/app")
+          .copy(".", ".")
+          .runInstall(false)
+          .runBuild()
+      )
+      .appendBuilder(
+        new DockerfileBuilder()
+          .from("nginx:stable-alpine")
           .copy("/app/dist", "/usr/share/nginx/html", "builder")
           .copy("./nginx.conf", "/etc/nginx/nginx.conf")
-          .cmd(`nginx -g "daemon off;"`);
-      }
-    })().build();
+          .cmd(`nginx -g "daemon off;"`)
+      )
+      .toTf(`${context.workingDir}/Dockerfile`);
   }
 
   constructor({
@@ -58,31 +67,28 @@ export class Astro extends Service {
       filename: `${context.workingDir}/nginx.conf`,
       name: `${name}-config`,
       content: `
-server {
-  listen 80;
-  gzip on;
-  gzip_types      text/plain application/xml;
-  gzip_proxied    no-cache no-store private expired auth;
-  gzip_min_length 1000;
-  location /assets {
-    access_log off;
-    expires 30d;
-    add_header Cache-Control public;
-
-    ## No need to bleed constant updates. Send the all shebang in one
-    ## fell swoop.
-    tcp_nodelay off;
-
-    ## Set the OS file cache.
-    open_file_cache max=3000 inactive=120s;
-    open_file_cache_valid 45s;
-    open_file_cache_min_uses 2;
-    open_file_cache_errors off;
-  }
-  location / {
+events {
+  worker_connections  4096;  ## Default: 1024
+}
+http {
+  include    mime.types;
+  sendfile on;
+  server {
+    listen 80;
     root /usr/share/nginx/html;
     index index.html index.htm;
-    try_files $uri $uri/ /index.html =404;
+
+    location /assets {
+      access_log off;
+      gzip_static on;
+      gzip_comp_level 5;
+      expires 1M;
+      add_header Cache-Control public;
+    }
+
+    location / {
+      try_files $uri $uri/ /index.html =404;
+    }
   }
 }`,
     });
