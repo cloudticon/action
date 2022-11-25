@@ -389,7 +389,6 @@ export class Service {
   }
 
   env(name: string, value: Input<string>) {
-    this.kubeDeployment.set("spec.");
     return this;
   }
 

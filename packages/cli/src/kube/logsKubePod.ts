@@ -3,6 +3,7 @@ import { kubeDebug } from "./kubeDebug";
 import { Log } from "@kubernetes/client-node";
 import { WritableStream } from "stream/web";
 import { PassThrough, Writable } from "stream";
+import { wsKeepAlive } from "../utils/wsKeepAlive";
 
 type GetPodLogsParams = {
   namespace: string;

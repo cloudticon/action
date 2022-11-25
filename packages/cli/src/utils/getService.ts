@@ -78,6 +78,12 @@ class Service {
   async devMode(outDir: string) {
     if (!this.isDevMode) {
       console.log("turning on dev mode....");
+      const envs = [
+        ...this.deploy.spec.template.spec.containers[0].env,
+        ...Object.entries(process.env)
+          .filter(([name]) => name.startsWith("CT_"))
+          .map(([name, value]) => ({ name: name.replace("CT_", ""), value })),
+      ];
       await patchKubeDeploy({
         namespace: this.namespace,
         name: this.name,
@@ -118,6 +124,11 @@ class Service {
             op: "replace",
             path: "/spec/template/spec/affinity/nodeAffinity/requiredDuringSchedulingIgnoredDuringExecution/nodeSelectorTerms/0/matchExpressions/0/values",
             value: ["prod-auto", "prod"],
+          },
+          {
+            op: "replace",
+            path: "/spec/template/spec/containers/0/env",
+            value: envs,
           },
           // {
           //   op: "remove",
@@ -169,6 +180,7 @@ class Service {
       const distPath = path.dirname(dist);
       this.runDevCmd(`mkdir -p ${distPath}`);
       this.runDevCmd(`echo "${content}" | base64 -d > ${dist}`);
+      this.runDevCmd(`cat ${dist}`);
     }
   }
 

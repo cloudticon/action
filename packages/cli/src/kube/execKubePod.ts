@@ -5,6 +5,7 @@ import EventEmitter from "events";
 import WebSocket = require("isomorphic-ws");
 import { kubeDebug } from "./kubeDebug";
 import { machine } from "os";
+import { wsKeepAlive } from "../utils/wsKeepAlive";
 
 // export type ExecKubeProcess = {
 //   stdout: Writable;
@@ -16,8 +17,16 @@ export class ExecKubeProcess extends EventEmitter {
   stderr = new PassThrough();
   stdin = new PassThrough();
   ws: WebSocket;
+  interval: NodeJS.Timer;
 
+  constructor() {
+    super();
+    this.interval = setInterval(() => {
+      this.stdin.write(`echo "ping";\n`);
+    }, 1000);
+  }
   close() {
+    clearInterval(this.interval);
     this.ws.close();
   }
 }
@@ -52,6 +61,9 @@ export const execKubePod = async ({
         return subProcess.emit("close", status);
       }
     )
-    .then((ws) => (subProcess.ws = ws));
+    .then((ws) => {
+      subProcess.ws = ws;
+      wsKeepAlive(ws);
+    });
   return subProcess as ExecKubeProcess;
 };
