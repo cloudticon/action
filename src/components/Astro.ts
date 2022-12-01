@@ -77,12 +77,40 @@ http {
     listen 80;
     root /usr/share/nginx/html;
     index index.html index.htm;
+    gzip on;
+    gzip_disable "msie6";
+
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_buffers 16 8k;
+    gzip_http_version 1.1;
+    gzip_min_length 256;
+    gzip_types
+    application/atom+xml
+    application/geo+json
+    application/javascript
+    application/x-javascript
+    application/json
+    application/ld+json
+    application/manifest+json
+    application/rdf+xml
+    application/rss+xml
+    application/xhtml+xml
+    application/xml
+    font/eot
+    font/otf
+    font/ttf
+    font/woff2
+    image/svg+xml
+    text/css
+    text/javascript
+    text/plain
+    text/xml;
 
     location /assets {
       access_log off;
-      gzip_static on;
-      gzip_comp_level 5;
-      expires 1M;
+      expires 3d;
       add_header Cache-Control public;
     }
 
