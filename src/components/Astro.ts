@@ -9,6 +9,8 @@ import { isDockerFileExist } from "../utils/isDockerFileExist";
 import { LocalFile } from "../LocalFile";
 import { context } from "../context";
 
+export type NginxErrorPage = { code: string; path };
+
 export type AstroInput = ServiceInput & {
   name: string;
   size?: any;
@@ -18,6 +20,8 @@ export type AstroInput = ServiceInput & {
   dockerfile?: string;
   context?: string;
   enableSentry?: boolean;
+  errorPages?: NginxErrorPage[];
+  cacheTtl?: string;
 };
 
 export class Astro extends Service {
@@ -52,6 +56,8 @@ export class Astro extends Service {
     buildEnvExtends = [],
     dockerfile = isDockerFileExist() ? "Dockerfile" : Astro.createDockerFile(),
     enableSentry = true,
+    cacheTtl = "3d",
+    errorPages = [],
     ...input
   }: AstroInput) {
     let dotEnv: DotEnv;
@@ -62,6 +68,10 @@ export class Astro extends Service {
         extends: buildEnvExtends,
       });
     }
+
+    const configErrorPages = errorPages
+      .map(({ code, path }) => `error_page ${code} ${path};`)
+      .join("\n");
 
     const config = new LocalFile({
       filename: `${context.workingDir}/nginx.conf`,
@@ -107,10 +117,11 @@ http {
     text/javascript
     text/plain
     text/xml;
-
+    ${configErrorPages}
+    
     location /assets {
       access_log off;
-      expires 1M;
+      expires ${cacheTtl};
       add_header Cache-Control public;
     }
 
