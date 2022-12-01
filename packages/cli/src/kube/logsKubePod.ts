@@ -1,9 +1,7 @@
 import { initKubeClient } from "./initKubeClient";
 import { kubeDebug } from "./kubeDebug";
-import { Log } from "@kubernetes/client-node";
-import { WritableStream } from "stream/web";
-import { PassThrough, Writable } from "stream";
-import { wsKeepAlive } from "../utils/wsKeepAlive";
+import { KubeConfig, Log } from "@kubernetes/client-node";
+import { PassThrough } from "stream";
 
 type GetPodLogsParams = {
   namespace: string;
@@ -16,13 +14,40 @@ export const logsKubePod = async ({
   container,
 }: GetPodLogsParams) => {
   const { config } = await initKubeClient();
-  kubeDebug(`get pod logs ${namespace}/${pod}`);
   const stream = new PassThrough();
-
-  const logClient = new Log(config);
-  logClient.log(namespace, pod, container, stream, {
-    follow: true,
-  });
-
+  logs({ config, container, namespace, pod, stream });
   return stream;
+};
+
+type LogsInput = {
+  config: KubeConfig;
+  namespace: string;
+  pod: string;
+  container: string;
+  stream: PassThrough;
+  sinceTime?: string;
+};
+const logs = ({
+  config,
+  namespace,
+  pod,
+  stream,
+  container,
+  sinceTime,
+}: LogsInput) => {
+  const logClient = new Log(config);
+  kubeDebug(`get pod logs ${namespace}/${pod}`, { sinceTime });
+  // @ts-ignore
+  logClient
+    .log(namespace, pod, container, stream, {
+      follow: true,
+      sinceTime,
+    })
+    .then((req) => {
+      req.on("close", () => {
+        kubeDebug(`logs request closed ${namespace}/${pod}`);
+        sinceTime = new Date().toISOString();
+        logs({ config, namespace, pod, stream, container, sinceTime });
+      });
+    });
 };
