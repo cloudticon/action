@@ -110,12 +110,12 @@ http {
 
     location /assets {
       access_log off;
-      expires 3d;
+      expires 1M;
       add_header Cache-Control public;
     }
 
     location / {
-      try_files $uri $uri/ /index.html =404;
+      try_files $uri $uri.html $uri/index.html $uri/index =404;
     }
   }
 }`,

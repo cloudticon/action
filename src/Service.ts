@@ -380,9 +380,11 @@ export class Service {
             ? map({
                 '"cert-manager.io/cluster-issuer"': "letsencrypt-prod",
                 '"haproxy-ingress.github.io/redirect-from"': `www.${ingressHost}`,
+                '"haproxy-ingress.github.io/ssl-redirect"': '"true"',
               })
             : map({
                 '"haproxy-ingress.github.io/redirect-from"': `www.${ingressHost}`,
+                '"haproxy-ingress.github.io/ssl-redirect"': '"true"',
               }),
         },
         spec: {
