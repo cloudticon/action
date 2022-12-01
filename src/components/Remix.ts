@@ -3,6 +3,7 @@ import { JsDockerfileBuilder } from "../Dockerfile";
 import { isDockerFileExist } from "../utils/isDockerFileExist";
 import { DotEnv } from "../DotEnv";
 import { Input } from "../types";
+import { context } from "../context";
 
 export type RemixInput = ServiceInput & {
   name: string;
@@ -48,7 +49,7 @@ export class Remix extends Service {
       .copy("./.env* ./package.json", "./")
       .cmdStart();
 
-    return builder.save();
+    return builder.toTf(`${context.workingDir}/Dockerfile`);
   }
 
   constructor({
