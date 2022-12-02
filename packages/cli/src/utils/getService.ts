@@ -79,7 +79,7 @@ class Service {
     if (!this.isDevMode) {
       console.log("turning on dev mode....");
       const envs = [
-        ...this.deploy.spec.template.spec.containers[0].env,
+        ...(this.deploy.spec.template.spec.containers[0].env || []),
         ...Object.entries(process.env)
           .filter(([name]) => name.startsWith("CT_"))
           .map(([name, value]) => ({ name: name.replace("CT_", ""), value })),
@@ -120,16 +120,16 @@ class Service {
               "yarn start",
             ],
           },
-          {
-            op: "replace",
-            path: "/spec/template/spec/affinity/nodeAffinity/requiredDuringSchedulingIgnoredDuringExecution/nodeSelectorTerms/0/matchExpressions/0/values",
-            value: ["prod-auto", "prod"],
-          },
-          {
-            op: "replace",
-            path: "/spec/template/spec/containers/0/env",
-            value: envs,
-          },
+          // {
+          //   op: "replace",
+          //   path: "/spec/template/spec/affinity/nodeAffinity/requiredDuringSchedulingIgnoredDuringExecution/nodeSelectorTerms/0/matchExpressions/0/values",
+          //   value: ["prod-auto", "prod"],
+          // },
+          // {
+          //   op: "replace",
+          //   path: "/spec/template/spec/containers/0/env",
+          //   value: envs,
+          // },
           // {
           //   op: "remove",
           //   path: "/spec/template/spec/containers/0/livenessProbe",
