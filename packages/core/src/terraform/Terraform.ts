@@ -1,4 +1,9 @@
-import { map, TerraformGenerator, Variable } from "terraform-generator";
+import {
+  map,
+  Provider,
+  TerraformGenerator,
+  Variable,
+} from "terraform-generator";
 import * as exec from "@actions/exec";
 import { getNamespace } from "../utils/getNamespace";
 import { Input } from "../types";
@@ -8,10 +13,12 @@ import { context } from "../context";
 import { ExecOptions } from "@actions/exec";
 import { WriteOptions } from "terraform-generator/dist/TerraformGenerator";
 const { logger } = context;
+export * from "terraform-generator";
 export type TerraformCmd = "apply" | "destroy" | "plan";
 
 export class Terraform extends TerraformGenerator {
   public variables: Map<string, Variable> = new Map();
+  private providers: Record<string, Provider> = {};
 
   constructor(
     public name: string,
@@ -116,6 +123,13 @@ export class Terraform extends TerraformGenerator {
     for (let service of services) {
       // service.toTf();
     }
+  }
+
+  public provider(type: string, args?: Record<string, any>): Provider {
+    if (!this.providers[type]) {
+      this.providers[type] = super.provider(type, args);
+    }
+    return this.providers[type];
   }
 
   private async exec(args: string[], ots: ExecOptions = {}) {

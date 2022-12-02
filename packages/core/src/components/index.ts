@@ -10,3 +10,4 @@ export * from "./Mongo";
 export * from "./crons";
 export * from "./PrismaDatabase";
 export * from "./NginxCache";
+export * from "./HelmChart";

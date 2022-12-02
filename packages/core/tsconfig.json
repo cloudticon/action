@@ -3,6 +3,7 @@
     "module": "commonjs",
     "target": "ES2022",
     "sourceMap": true,
+    "declaration": true,
     "outDir": "lib",
     "esModuleInterop": true
   },
