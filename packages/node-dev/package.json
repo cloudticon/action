@@ -1,0 +1,12 @@
+{
+  "name": "@cloudticon/node-dev",
+  "version": "0.0.2",
+  "main": "src/index.js",
+  "bin": {
+    "ct-node-dev": "src/index.js"
+  },
+  "license": "MIT",
+  "files": [
+    "src"
+  ]
+}
