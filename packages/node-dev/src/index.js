@@ -2,6 +2,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const zlib = require("zlib");
 const { spawn } = require("child_process");
 
 const PORT = 12543;
@@ -12,12 +13,11 @@ const index = http.createServer(async (req, res) => {
     case req.method === "PUT":
       const p = path.join(process.cwd(), req.url);
       const d = path.dirname(p);
-      fs.promises.mkdir(d, { recursive: true }).catch(console.error);
-      const stream = fs.createWriteStream(p);
-      req.pipe(stream);
-      req.on("close", () => {
-        res.end();
-      });
+      await fs.promises.mkdir(d, { recursive: true });
+      const write = req
+        .pipe(zlib.createInflate())
+        .pipe(fs.createWriteStream(p));
+      write.on("close", () => res.end());
       break;
     case req.method === "DELETE":
       await fs.promises.rm(path.join(process.cwd(), req.url));

@@ -6,6 +6,7 @@ import axios from "axios";
 import * as fs from "fs";
 import { V1Deployment } from "@kubernetes/client-node";
 import createDebug from "debug";
+import { createDeflate } from "zlib";
 
 const debug = createDebug("devMode");
 
@@ -110,7 +111,10 @@ export class DevMode {
   }
 
   async copyFile(src: string, dist: string) {
-    await this.devNodeClient.put(dist, fs.createReadStream(src));
+    await this.devNodeClient.put(
+      dist,
+      fs.createReadStream(src).pipe(createDeflate())
+    );
   }
 
   async rmFile(path: string) {

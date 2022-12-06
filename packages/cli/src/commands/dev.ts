@@ -25,13 +25,13 @@ program
     namespace = namespace || context.namespace;
     const service = await getService(name, namespace);
     const diff = await git.diff(context.branch);
-    let logsStarted = false;
 
     onShutdown("dev-mode", async function () {
       await service.stopLogs();
       spinner.start({ text: "Closing dev mode" });
       await service.devMode.stop();
       spinner.clear();
+      spinner.reset();
     });
 
     spinner.start({ text: "Starting dev mode" });
@@ -43,14 +43,14 @@ program
       await service.logs();
     }
 
-    const deb = new Debouncer(100, async () => {
+    const debouncer = new Debouncer(100, async () => {
       await service.devMode.restartServer();
       spinner.success();
       await service.logs();
     });
 
     diff.forEach((file) => {
-      deb.add(service.devMode.copyFile(resolve(file), file));
+      debouncer.add(service.devMode.copyFile(resolve(file), file));
     });
 
     watch(outDir)
@@ -58,12 +58,16 @@ program
       .on("change", (name) => {
         debug(`file changed ${name}`);
         if (name.endsWith(".js")) {
-          spinner.start({ text: "Restart server" });
-          deb.add(service.devMode.copyFile(resolve(name), name));
+          debouncer.add(service.devMode.copyFile(resolve(name), name));
+          spinner.start({
+            text: `Restating server, files ${debouncer.promises.length} changed`,
+          });
         }
       })
       .on("unlink", (name) => {
-        spinner.start({ text: "Restart server" });
-        deb.add(service.devMode.rmFile(name));
+        debouncer.add(service.devMode.rmFile(name));
+        spinner.start({
+          text: `Restating server, files ${debouncer.promises.length} removed`,
+        });
       });
   });

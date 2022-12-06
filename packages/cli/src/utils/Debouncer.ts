@@ -4,7 +4,6 @@ const debug = createDebug("debouncer");
 export class Debouncer {
   timeout: any;
   promises: Promise<any>[] = [];
-
   constructor(protected time: number, protected callback: () => any) {}
 
   add(promise: Promise<any>) {
