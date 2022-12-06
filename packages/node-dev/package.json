@@ -1,6 +1,6 @@
 {
   "name": "@cloudticon/node-dev",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "main": "src/index.js",
   "bin": {
     "ct-node-dev": "src/index.js"
