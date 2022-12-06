@@ -1,20 +1,11 @@
-require("esbuild")
-  .build({
-    entryPoints: [
-      "/home/krs/Projects/cloudticon/deploy/packages/node-dev/src/index.ts",
-    ],
-    outfile: "out.js",
-    bundle: true,
-    watch: {
-      onRebuild(error, result) {
-        if (error) console.error("watch build failed:", error);
-        else {
-          console.log("watch build succeeded:", result);
-          // HERE: somehow restart the server from here, e.g., by sending a signal that you trap and react to inside the server.
-        }
-      },
-    },
-  })
-  .then((result) => {
-    console.log("watching...");
-  });
+const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
+
+const file = "index.js";
+axios
+  .put(
+    `http://localhost:12543/dist/${file}`,
+    fs.createReadStream(`src/${file}`)
+  )
+  .then(() => console.log("done"));

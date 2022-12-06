@@ -2,7 +2,6 @@ import * as k8s from "@kubernetes/client-node";
 import * as net from "net";
 import { initKubeClient } from "./initKubeClient";
 import { kubeDebug } from "./kubeDebug";
-import { PassThrough } from "stream";
 
 type Params = {
   namespace: string;
@@ -24,6 +23,10 @@ export const portForwardToKubePod = async ({
   const server = net.createServer((socket) => {
     forward.portForward(namespace, pod, [podPort], socket, null, socket);
   });
-
   server.listen(localPort, host);
+
+  return () => {
+    kubeDebug("port forward close", namespace, `${podPort}:${localPort}`);
+    server.close();
+  };
 };

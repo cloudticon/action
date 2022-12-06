@@ -6,6 +6,9 @@ import { onShutdown } from "node-graceful-shutdown";
 import createDebug from "debug";
 import * as fs from "fs";
 import { getContext } from "../utils/getContext";
+import { spinner } from "../utils/spinner";
+import { Debouncer } from "../utils/Debouncer";
+import { git } from "../utils/git";
 
 const debug = createDebug("watch");
 program
@@ -21,25 +24,46 @@ program
     const { outDir } = tsConfig.compilerOptions;
     namespace = namespace || context.namespace;
     const service = await getService(name, namespace);
-    await service.devMode(outDir);
-    if (!service.hasDevProcess) {
-      await service.startDevProcess();
-    }
-    await service.logs();
+    const diff = await git.diff(context.branch);
+    let logsStarted = false;
 
     onShutdown("dev-mode", async function () {
       await service.stopLogs();
-      await service.devModeOff();
+      spinner.start({ text: "Closing dev mode" });
+      await service.devMode.stop();
+      spinner.clear();
     });
 
-    const watcher = watch(outDir).add("node_modules");
-    watcher.on("change", async (name) => {
-      debug(`file changed ${name}`);
-      if (name.endsWith(".js")) {
-        service.copyFile(resolve(name), `/app/${name}`);
-      }
+    spinner.start({ text: "Starting dev mode" });
+    await service.devMode.start();
+
+    if (!diff.length) {
+      await service.devMode.restartServer();
+      spinner.success();
+      await service.logs();
+    }
+
+    const deb = new Debouncer(100, async () => {
+      await service.devMode.restartServer();
+      spinner.success();
+      await service.logs();
     });
-    watcher.on("unlink", (name) => {
-      service.rm(`/app/${name}`);
+
+    diff.forEach((file) => {
+      deb.add(service.devMode.copyFile(resolve(file), file));
     });
+
+    watch(outDir)
+      .add("node_modules")
+      .on("change", (name) => {
+        debug(`file changed ${name}`);
+        if (name.endsWith(".js")) {
+          spinner.start({ text: "Restart server" });
+          deb.add(service.devMode.copyFile(resolve(name), name));
+        }
+      })
+      .on("unlink", (name) => {
+        spinner.start({ text: "Restart server" });
+        deb.add(service.devMode.rmFile(name));
+      });
   });

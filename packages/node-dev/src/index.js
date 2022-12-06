@@ -4,39 +4,42 @@ const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
 
-// PORT
 const PORT = 12543;
+let subprocess;
 
-// server create
-const server = http.createServer(async (req, res) => {
-  if (req.method === "PUT") {
-    const p = path.join(__dirname, req.url);
-    const d = path.dirname(p);
-    // const
-    console.log("file ", p, d);
-    fs.promises.mkdir(d, { recursive: true }).catch(console.error);
-    const stream = fs.createWriteStream(p);
-    req.pipe(stream);
-    req.on("close", () => {
+const index = http.createServer(async (req, res) => {
+  switch (true) {
+    case req.method === "PUT":
+      const p = path.join(process.cwd(), req.url);
+      const d = path.dirname(p);
+      fs.promises.mkdir(d, { recursive: true }).catch(console.error);
+      const stream = fs.createWriteStream(p);
+      req.pipe(stream);
+      req.on("close", () => {
+        res.end();
+      });
+      break;
+    case req.method === "DELETE":
+      await fs.promises.rm(path.join(process.cwd(), req.url));
       res.end();
-      start();
-    });
-  } else {
-    console.log("nodep");
-    res.end();
+      break;
+    case req.method === "POST" && req.url === "/restart":
+      if (subprocess) {
+        subprocess.kill();
+      }
+      subprocess = spawn("yarn", ["start"], {
+        cwd: process.cwd(),
+      });
+      subprocess.stdout.pipe(process.stdout);
+      subprocess.stderr.pipe(process.stderr);
+      res.end();
+      break;
+    case req.method === "GET" && req.url === "/health":
+      res.end();
+      break;
+    default:
+      res.writeHead(404);
+      res.end();
   }
 });
-
-let subprocess;
-const start = () => {
-  if (subprocess) {
-    subprocess.kill();
-  }
-  subprocess = spawn("node", ["dist/index.js"]);
-  subprocess.stdin.pipe(process.stdin);
-  subprocess.stdout.pipe(process.stdout);
-};
-// server listen port
-server.listen(PORT);
-
-console.log(`Server is running on PORT: ${PORT}`);
+index.listen(PORT);

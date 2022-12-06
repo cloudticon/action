@@ -1,42 +1,29 @@
-import fs from "fs";
 import createDebug from "debug";
-import path from "path";
-import {
-  execKubePod,
-  ExecKubeProcess,
-  getKubeDeploy,
-  getKubeDeployPods,
-  logsKubePod,
-  waitKubeDeployReady,
-} from "../kube";
+import { getKubeDeploy, getKubeDeployPods, logsKubePod } from "../kube";
 import { V1Deployment, V1Pod } from "@kubernetes/client-node";
 import { PassThrough } from "stream";
-import { patchKubeDeploy } from "../kube/patchKubeDeploy";
+import { DevMode } from "./DevMode";
 
 const debug = createDebug("service");
 
-class Service {
-  private deploy: V1Deployment;
-  private devProcess: ExecKubeProcess;
+export class Service {
+  public deploy: V1Deployment;
+  public devMode: DevMode = new DevMode(this);
   private logsStream: PassThrough;
 
   constructor(public name: string, public namespace: string) {}
 
-  get hasDevProcess() {
-    return !!this.devProcess;
-  }
-  get isDevMode() {
-    return this.deploy.metadata.annotations["ct-dev-mode"] === "true";
-  }
-
-  async refresh() {
-    this.deploy = await getKubeDeploy({
+  async getDeployment() {
+    return getKubeDeploy({
       name: this.name,
       namespace: this.namespace,
     });
   }
 
   async logs() {
+    if (this.logsStream) {
+      return;
+    }
     const { name, container } = await this.getPodNameAndContainer();
     const stream = await logsKubePod({
       namespace: this.namespace,
@@ -74,155 +61,8 @@ class Service {
       container: latest.spec.containers[0].name,
     };
   }
-
-  async devMode(outDir: string) {
-    if (!this.isDevMode) {
-      console.log("turning on dev mode....");
-      const envs = [
-        ...(this.deploy.spec.template.spec.containers[0].env || []),
-        ...Object.entries(process.env)
-          .filter(([name]) => name.startsWith("CT_"))
-          .map(([name, value]) => ({ name: name.replace("CT_", ""), value })),
-      ];
-      await patchKubeDeploy({
-        namespace: this.namespace,
-        name: this.name,
-        body: [
-          {
-            op: "add",
-            path: "/metadata/annotations/ct-dev-mode",
-            value: "true",
-          },
-          {
-            op: "add",
-            path: "/metadata/annotations/ct-dev-snapshot",
-            value: JSON.stringify(this.deploy.spec),
-          },
-          {
-            op: "replace",
-            path: "/spec/replicas",
-            value: 1,
-          },
-          {
-            op: "replace",
-            path: "/spec/template/spec/containers/0/command",
-            value: [
-              "npx",
-              "nodemon",
-              "--verbose",
-              "--watch",
-              `/app/${outDir}/**`,
-              "--ext",
-              "js",
-              "--delay",
-              "0.5",
-              "--exec",
-              "yarn start",
-            ],
-          },
-          // {
-          //   op: "replace",
-          //   path: "/spec/template/spec/affinity/nodeAffinity/requiredDuringSchedulingIgnoredDuringExecution/nodeSelectorTerms/0/matchExpressions/0/values",
-          //   value: ["prod-auto", "prod"],
-          // },
-          // {
-          //   op: "replace",
-          //   path: "/spec/template/spec/containers/0/env",
-          //   value: envs,
-          // },
-          // {
-          //   op: "remove",
-          //   path: "/spec/template/spec/containers/0/livenessProbe",
-          // },
-          // {
-          //   op: "remove",
-          //   path: "/spec/template/spec/containers/0/readinessProbe",
-          // },
-        ],
-      });
-      await waitKubeDeployReady({ name: this.name, namespace: this.namespace });
-      await this.refresh();
-      await this.startDevProcess();
-    }
-    console.log("dev mode on");
-  }
-
-  async startDevProcess() {
-    if (this.hasDevProcess) {
-      return;
-    }
-    const { name, container } = await this.getPodNameAndContainer();
-    this.devProcess = await execKubePod({
-      namespace: this.namespace,
-      name,
-      container,
-      command: "ash",
-    });
-    this.devProcess.stdout.on("data", (data) => {
-      debug(data.toString());
-    });
-    this.devProcess.stderr.on("data", (data) => {
-      debug("stderr: " + data.toString());
-    });
-    this.devProcess.on("close", (code) => {
-      console.log("dev process closed", JSON.stringify(code, null, 2));
-      this.devProcess = null;
-      if (code === 137) {
-        console.log("dev reconnect");
-        this.startDevProcess();
-      }
-    });
-  }
-  copyFile(src: string, dist: string) {
-    if (this.isDevMode) {
-      const content = fs.readFileSync(src, "base64");
-      debug(`copy file ${src} to ${dist}`);
-      const distPath = path.dirname(dist);
-      this.runDevCmd(`mkdir -p ${distPath}`);
-      this.runDevCmd(`echo "${content}" | base64 -d > ${dist}`);
-      this.runDevCmd(`cat ${dist}`);
-    }
-  }
-
-  rm(path: string) {
-    this.runDevCmd(`rm -rf ${path}`);
-  }
-
-  runDevCmd(cmd: string) {
-    debug(`dev: ${cmd}`);
-    this.devProcess.stdin.write(`${cmd}\n`);
-  }
-  async devModeOff() {
-    if (this.isDevMode) {
-      console.log("turn off dev mode...");
-      if (this.devProcess) {
-        this.devProcess.close();
-        // this.devProcess.stdout.destroy();
-        // this.devProcess.stderr.destroy();
-        // this.devProcess.stdin.destroy();
-        // this.devProcess.kill("SIGINT");
-      }
-      const snapshot = JSON.parse(
-        this.deploy.metadata.annotations["ct-dev-snapshot"]
-      );
-      await patchKubeDeploy({
-        name: this.name,
-        namespace: this.namespace,
-        body: [
-          { op: "remove", path: "/metadata/annotations/ct-dev-mode" },
-          { op: "remove", path: "/metadata/annotations/ct-dev-snapshot" },
-          { op: "replace", path: "/spec", value: snapshot },
-        ],
-      });
-      await waitKubeDeployReady({ name: this.name, namespace: this.namespace });
-      await this.refresh();
-    }
-    console.log("dev mode off");
-  }
 }
 
 export const getService = async (name: string, namespace: string) => {
-  const service = new Service(name, namespace);
-  await service.refresh();
-  return service;
+  return new Service(name, namespace);
 };

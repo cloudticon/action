@@ -10,7 +10,8 @@
     "cli": "yarn workspace @cloudticon/cli",
     "core": "yarn workspace @cloudticon/core",
     "gha": "yarn workspace @cloudticon/github-action",
-    "get-core": "yarn workspace @cloudticon/get-core"
+    "get-core": "yarn workspace @cloudticon/get-core",
+    "node-dev": "yarn workspace @cloudticon/node-dev"
   },
   "dependencies": {
     "prettier": "^2.7.1"
