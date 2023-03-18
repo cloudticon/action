@@ -39,14 +39,14 @@ export const run = async () => {
   await setupTerraform();
   await setupKubectl();
 
-  const repositoryScore = await terraformRepository();
+  // const repositoryScore = await terraformRepository();
   const projectBranchScope = await terraformProjectBranchScope();
   const repositoryBranchScope = await terraformRepositoryBranchScope();
   repositoryBranchScope.setVariables(values);
 
   if (cmd === "apply") {
     await restoreCache([
-      repositoryScore,
+      // repositoryScore,
       projectBranchScope,
       repositoryBranchScope,
     ]);
@@ -59,7 +59,7 @@ export const run = async () => {
     repositoryBranchScope.setServices(services);
 
     await Promise.all([
-      repositoryScore.init(),
+      // repositoryScore.init(),
       projectBranchScope.init(),
       repositoryBranchScope.init(),
     ]);
@@ -67,7 +67,7 @@ export const run = async () => {
     switch (cmd) {
       case "plan":
       case "apply":
-        await repositoryScore.cmd(cmd);
+        // await repositoryScore.cmd(cmd);
         await projectBranchScope.cmd(cmd);
         await repositoryBranchScope.cmd(cmd);
         break;
@@ -80,7 +80,7 @@ export const run = async () => {
 
     if (cmd === "apply") {
       await saveCache([
-        repositoryScore,
+        // repositoryScore,
         projectBranchScope,
         repositoryBranchScope,
       ]);

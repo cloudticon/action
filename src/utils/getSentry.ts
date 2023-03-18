@@ -5,6 +5,9 @@ import { context } from "../context";
 
 let data: Data;
 export const getSentry = () => {
+  return {
+    dns: "",
+  };
   const { sentry } = getCtCreds();
   if (sentry) {
     if (!data) {
